@@ -1,7 +1,4 @@
-﻿#define MOUSE_MANAGER
-//#define TIME_MANAGER
-
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod.Utils;
 using ReLogic.Content;
@@ -36,11 +33,10 @@ public static partial class TigerUtils {
         _mod = mod;
         _modName = mod.Name;
     }
-
     private static Mod? _mod;
     public static Mod ModInstance => _mod!;
     private static string? _modName;
-    public static string ModName => _modName!;
+    internal static string ModName => _modName!;
     #region 获取 / 创建 (Mod|Global|Sample)?(Item|Projectile|NPC)
     public static Item NewItem<T>(int stack = 1, int prefix = 0) where T : ModItem => new(ModContent.ItemType<T>(), stack, prefix);
     public static T NewModItem<T>(int stack = 1, int prefix = 0) where T : ModItem => (T)new Item(ModContent.ItemType<T>(), stack, prefix).ModItem;
@@ -143,7 +139,7 @@ public static partial class TigerUtils {
     #endregion
     #region 本地化相关
     public static LocalizedText GetModLocalization(string suffix, Func<string>? makeDefaultValue = null)
-        => Language.GetOrRegister(string.Join('.', $"Mods.{ModName}", suffix), makeDefaultValue);
+        => Language.GetOrRegister(string.Join('.', "Mods", ModName, suffix), makeDefaultValue);
     public static string GetModLocalizedText(string suffix, Func<string>? makeDefaultValue = null)
         => GetModLocalization(suffix, makeDefaultValue).Value;
     #endregion
@@ -593,9 +589,9 @@ public static partial class TigerUtils {
 
 public static partial class TigerClasses {
 #if MOUSE_MANAGER
-    public class MouseManager : ModSystem {
-        public static bool OldMouseLeft;
-        public static bool MouseLeft;
+    public sealed class MouseManager : ModSystem {
+        public static bool OldMouseLeft { get; private set; }
+        public static bool MouseLeft { get; private set; }
         public static bool MouseLeftDown => MouseLeft && !OldMouseLeft;
         public event Action? OnMouseLeftDown;
         public override void PostUpdateInput() {
@@ -1054,6 +1050,123 @@ public static partial class TigerExtensions {
             }
         }
     }
+    #endregion
+    #region BinaryWriter/Reader 拓展
+    /*
+    //渣, 不要用, 没测试过, 用了概不负责
+    /// <summary>
+    /// 支持类型: 原生, Color, Vector2, 及其构成的数组或列表或字典
+    /// (<see cref="List{T}"/>, <see cref="Dictionary{TKey, TValue}"/>)
+    /// </summary>
+    public static void WriteObj<T>(this BinaryWriter bw, T obj) {
+        if (obj is ulong @ulong) { bw.Write(@ulong); }
+        else if (obj is uint @uint) { bw.Write(@uint); }
+        else if (obj is ushort @ushort) { bw.Write(@ushort); }
+        else if (obj is string @string) { bw.Write(@string); }
+        else if (obj is float @float) { bw.Write(@float); }
+        else if (obj is sbyte @sbyte) { bw.Write(@sbyte); }
+        else if (obj is long @long) { bw.Write(@long); }
+        else if (obj is int @int) { bw.Write(@int); }
+        else if (obj is Half @Half) { bw.Write(@Half); }
+        else if (obj is double @double) { bw.Write(@double); }
+        else if (obj is decimal @decimal) { bw.Write(@decimal); }
+        else if (obj is char @char) { bw.Write(@char); }
+        else if (obj is byte @byte) { bw.Write(@byte); }
+        else if (obj is bool @bool) { bw.Write(@bool); }
+        else if (obj is short @short) { bw.Write(@short); }
+        else if (obj is byte[] buffer) { bw.Write(buffer.Length); bw.Write(buffer); }
+        else if (obj is char[] chars) { bw.Write(chars.Length); bw.Write(chars); }
+        else if (obj is Color @color) { bw.WriteRGB(@color); }
+        else if (obj is Vector2 @vector2) { bw.WritePackedVector2(@vector2); }
+        else if (obj is Array array) { bw.Write(array.Length); foreach (var o in array) { bw.WriteObj(o); } }
+        else if (obj is List<object> list) { bw.Write(list.Count); foreach (int i in Range(list.Count)) { bw.WriteObj(list[i]); } }
+        else if (obj is Dictionary<object, object> dict) { bw.Write(dict.Count); foreach (var pair in dict) { bw.WriteObj(pair.Key); bw.WriteObj(pair.Value); } }
+        else
+            throw new Exception("type not suppoerted for type " + obj?.GetType().ToString() ?? "null");
+    }
+    public static void WriteArray<T>(this BinaryWriter bw, T[] array) {
+        bw.Write(array.Length);
+        foreach (int i in Range(array.Length)) {
+            bw.WriteObj(array[i]);
+        }
+    }
+    public static void WriteList<T>(this BinaryWriter bw, List<T> array) {
+        bw.Write(array.Count);
+        foreach (int i in Range(array.Count)) {
+            bw.WriteObj(array[i]);
+        }
+    }
+    public static void WriteDict<TKey, TValue>(this BinaryWriter bw, Dictionary<TKey, TValue> dict) where TKey : notnull {
+        bw.Write(dict.Count);
+        foreach (var pair in dict) {
+            bw.WriteObj(pair.Key);
+            bw.WriteObj(pair.Value);
+        }
+    }
+    /// <summary>
+    /// 支持类型: 原生, Color, Vector2
+    /// </summary>
+    public static void ReadObj<T>(this BinaryReader br, out T obj) {
+        Type type = typeof(T);
+        if (false) { }
+        else if (type == typeof(ulong)) { obj = (T)(object)br.ReadUInt64(); }
+        else if (type == typeof(uint)) { obj = (T)(object)br.ReadUInt32(); }
+        else if (type == typeof(ushort)) { obj = (T)(object)br.ReadUInt16(); }
+        else if (type == typeof(string)) { obj = (T)(object)br.ReadString(); }
+        else if (type == typeof(float)) { obj = (T)(object)br.ReadSingle(); }
+        else if (type == typeof(sbyte)) { obj = (T)(object)br.ReadSByte(); }
+        else if (type == typeof(long)) { obj = (T)(object)br.ReadInt64(); }
+        else if (type == typeof(int)) { obj = (T)(object)br.ReadInt32(); }
+        else if (type == typeof(Half)) { obj = (T)(object)br.ReadHalf(); }
+        else if (type == typeof(double)) { obj = (T)(object)br.ReadDouble(); }
+        else if (type == typeof(decimal)) { obj = (T)(object)br.ReadDecimal(); }
+        else if (type == typeof(char)) { obj = (T)(object)br.ReadChar(); }
+        else if (type == typeof(byte)) { obj = (T)(object)br.ReadByte(); }
+        else if (type == typeof(bool)) { obj = (T)(object)br.ReadBoolean(); }
+        else if (type == typeof(short)) { obj = (T)(object)br.ReadInt16(); }
+        else if (type == typeof(byte[])) { int length = br.ReadInt32(); obj = (T)(object)br.ReadBytes(length); }
+        else if (type == typeof(char[])) { int length = br.ReadInt32(); obj = (T)(object)br.ReadChars(length); }
+        else if (type == typeof(Color)) { obj = (T)(object)br.ReadRGB(); }
+        else if (type == typeof(Vector2)) { obj = (T)(object)br.ReadPackedVector2(); }
+        else
+            throw new Exception("type not suppoerted for type " + type.ToString());
+    }
+    /// <summary>
+    /// 支持<see cref="ReadObj"/>所支持类型的数组
+    /// </summary>
+    public static void ReadArray<T>(this BinaryReader br, out T[] array) {
+        int length = br.ReadInt32();
+        array = new T[length];
+        foreach (int i in Range(length)) {
+            br.ReadObj(out array[i]);
+        }
+    }
+    /// <summary>
+    /// 支持<see cref="ReadObj"/>所支持类型的列表
+    /// </summary>
+    public static void ReadList<T>(this BinaryReader br, ref List<T> list) {
+        int count = br.ReadInt32();
+        if (list == null) {
+            list = new(count);
+        }
+        else {
+            list.Clear();
+        }
+        foreach (int i in Range(count)) {
+            br.ReadObj(out T element);
+            list[i] = element;
+        }
+    }
+    public static void ReadDict<TKey, TValue>(this BinaryReader br, ref Dictionary<TKey, TValue> dict) where TKey : notnull {
+        int count = br.ReadInt32();
+        dict = [];
+        foreach (int _ in Range(count)) {
+            br.ReadObj(out TKey key);
+            br.ReadObj(out TValue value);
+            dict.Add(key, value);
+        }
+    }
+    */
     #endregion
     #region AppendItem
     public static StringBuilder AppendItem(this StringBuilder stringBuilder, Item item) =>
@@ -2335,12 +2448,12 @@ public static partial class TigerExtensions {
     #endregion
     #endregion
     #region SetDimensions
-    private static readonly ValueDG<Action<UIElement, CalculatedStyle>> setDimensionsDelegate = new(() => GetSetFieldDelegate<UIElement, CalculatedStyle>("_dimensions"));
-    private static readonly ValueDG<Action<UIElement, CalculatedStyle>> setInnerDimensionsDelegate = new(() => GetSetFieldDelegate<UIElement, CalculatedStyle>("_innerDimensions"));
-    private static readonly ValueDG<Action<UIElement, CalculatedStyle>> setOutterDimensionsDelegate = new(() => GetSetFieldDelegate<UIElement, CalculatedStyle>("_outerDimensions"));
-    public static void SetDimensions(this UIElement self, CalculatedStyle dimensions) => setDimensionsDelegate.Value(self, dimensions);
-    public static void SetInnerDimensions(this UIElement self, CalculatedStyle dimensions) => setInnerDimensionsDelegate.Value(self, dimensions);
-    public static void SetOutterDimensions(this UIElement self, CalculatedStyle dimensions) => setOutterDimensionsDelegate.Value(self, dimensions);
+    public static void SetDimensions(this UIElement self, CalculatedStyle dimensions) => self._dimensions = dimensions;
+    public static void SetInnerDimensions(this UIElement self, CalculatedStyle dimensions) => self._innerDimensions = dimensions;
+    public static void SetOuterDimensions(this UIElement self, CalculatedStyle dimensions) => self._outerDimensions = dimensions;
+    public static ref CalculatedStyle GetDimensionsRef(this UIElement self) => ref self._dimensions;
+    public static ref CalculatedStyle GetInnerDimensionsRef(this UIElement self) => ref self._innerDimensions;
+    public static ref CalculatedStyle GetOuterDimensionsRef(this UIElement self) => ref self._outerDimensions;
     #endregion
     #region SetParent
     private static readonly ValueDG<Action<UIElement, UIElement?>> setParentDelegate = new(() => GetSetFieldDelegate<UIElement, UIElement?>(nameof(UIElement.Parent)));
