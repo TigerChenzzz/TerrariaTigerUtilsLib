@@ -3,7 +3,6 @@
 global using static TigerUtilsLib.TigerUtils;
 global using static TigerUtilsLib.TigerClasses;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using MonoMod.Cil;
@@ -12,7 +11,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -2607,6 +2605,62 @@ public static partial class TigerUtils {
         il.Emit(SOpCodes.Ret);
         return method.CreateDelegate<Action<object?>>();
     }
+    #endregion
+
+    #endregion
+    #region 获得引用字段的委托
+    public delegate ref TValue RefInstanceMemberGetter<T, TValue>(T self);
+
+    public static RefInstanceMemberGetter<T, TField> GetGetRefFieldDelegate<T, TField>(string fieldName, BindingFlags flags = bfpni)
+        => GetGetRefFieldDelegate<T, TField>(typeof(T).GetField(fieldName, flags)!);
+    public static RefInstanceMemberGetter<object, TField> GetGetRefFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = bfpni)
+        => GetGetRefFieldDelegate<TField>(type, type.GetField(fieldName, flags)!);
+
+    public static RefInstanceMemberGetter<T, TField> GetGetRefFieldDelegate<T, TField>(FieldInfo field) {
+        DynamicMethod method = new("GetRefField", typeof(TField).MakeByRefType(), [typeof(T)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        il.Emit(SOpCodes.Ldflda, field);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<RefInstanceMemberGetter<T, TField>>();
+    }
+    public static RefInstanceMemberGetter<object, TField> GetGetRefFieldDelegate<TField>(Type type, FieldInfo field) {
+        DynamicMethod method = new("GetRefField", typeof(TField).MakeByRefType(), [typeof(object)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        if (type.IsValueType) {
+            il.Emit(SOpCodes.Unbox, type);
+        }
+        else {
+            il.Emit(SOpCodes.Castclass, type);
+        }
+        il.Emit(SOpCodes.Ldflda, field);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<RefInstanceMemberGetter<object, TField>>();
+    }
+    public static RefInstanceMemberGetter<object, TField> GetGetRefFieldDelegate<TField>(FieldInfo field)
+        => GetGetRefFieldDelegate<TField>(field.DeclaringType!, field);
+    public static RefInstanceMemberGetter<object, TField> GetGetRefFieldFromObjectDelegate<TField>(FieldInfo field)
+        => GetGetRefFieldDelegate<TField>(field.DeclaringType!, field);
+    // 必须指定 TField, 否则不能使用 Ref
+
+    #region 获取静态引用字段的委托
+    
+    public delegate ref TValue RefStaticMemberGetter<TValue>();
+
+    public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<T, TField>(string fieldName, BindingFlags flags = bfpni)
+        => GetGetStaticRefFieldDelegate<TField>(typeof(T).GetField(fieldName, flags)!);
+    public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = bfpni)
+        => GetGetStaticRefFieldDelegate<TField>(type.GetField(fieldName, flags)!);
+
+    public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<TField>(FieldInfo field) {
+        DynamicMethod method = new("GetStaticRefField", typeof(TField).MakeByRefType(), [], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldsflda, field);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<RefStaticMemberGetter<TField>>();
+    }
+    // 必须指定 TField, 否则不能使用 Ref
     #endregion
 
     #endregion
