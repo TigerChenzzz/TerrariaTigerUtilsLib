@@ -4020,14 +4020,18 @@ public static partial class TigerExtensions {
         return p;
     }
     #endregion
-    
+
     #region 堆排序
-    // 分 List, Array, IList 三个类型, 以及使用自定义 comparer 或者用 IComparable, 总共 3x2 共 6 个
+    // 分 List, Array, IList 三个类型, 以及使用 IComparer / 自定义 comparer 方法 / IComparable, 总共 3x3 共 9 个
+    public static List<T> HeapSort<T>(this List<T> list, IComparer<T> comparer) => HeapSort(list, comparer.Compare);
+    public static T[] HeapSort<T>(T[] list, IComparer<T> comparer) => HeapSort(list, comparer.Compare);
+    public static IList<T> HeapSort<T>(this IList<T> list, IComparer<T> comparer) => HeapSort(list, comparer.Compare);
+
     public static List<T> HeapSort<T>(this List<T> list, Func<T, T, int> comparer) {
-        HeapSortInner(list, comparer, 0, list.Count);
+        HeapSortInner(list, comparer, 0, list.Count, null);
         return list;
     }
-    private static void HeapSortInner<T>(this List<T> list, Func<T, T, int> comparer, int left, int right) {
+    private static void HeapSortInner<T>(this List<T> list, Func<T, T, int> comparer, int left, int right, T[]? lefts) {
         int length = right - left;
         if (length <= 1) {
             return;
@@ -4062,9 +4066,12 @@ public static partial class TigerExtensions {
             return;
         }
         int middle = (left + right) / 2;
-        HeapSortInner(list, comparer, left, middle);
-        HeapSortInner(list, comparer, middle, right);
-        T[] lefts = new T[middle - left];
+        lefts ??= new T[middle - left];
+        HeapSortInner(list, comparer, left, middle, lefts);
+        HeapSortInner(list, comparer, middle, right, lefts);
+        if (comparer(list[middle - 1], list[middle]) <= 0) {
+            return;
+        }
         list.CopyTo(left, lefts, 0, middle - left);
         int indexLeft = 0, indexRight = middle;
         bool rightMoved = false;
@@ -4091,10 +4098,10 @@ public static partial class TigerExtensions {
         }
     }
     public static T[] HeapSort<T>(this T[] list, Func<T, T, int> comparer) {
-        HeapSortInner(list, comparer, 0, list.Length);
+        HeapSortInner(list, comparer, 0, list.Length, null);
         return list;
     }
-    private static void HeapSortInner<T>(this T[] list, Func<T, T, int> comparer, int left, int right) {
+    private static void HeapSortInner<T>(this T[] list, Func<T, T, int> comparer, int left, int right, T[]? lefts) {
         int length = right - left;
         if (length <= 1) {
             return;
@@ -4129,9 +4136,12 @@ public static partial class TigerExtensions {
             return;
         }
         int middle = (left + right) / 2;
-        HeapSortInner(list, comparer, left, middle);
-        HeapSortInner(list, comparer, middle, right);
-        T[] lefts = new T[middle - left];
+        lefts ??= new T[middle - left];
+        HeapSortInner(list, comparer, left, middle, lefts);
+        HeapSortInner(list, comparer, middle, right, lefts);
+        if (comparer(list[middle - 1], list[middle]) <= 0) {
+            return;
+        }
         Array.Copy(list, left, lefts, 0, middle - left);
         int indexLeft = 0, indexRight = middle;
         bool rightMoved = false;
@@ -4158,10 +4168,10 @@ public static partial class TigerExtensions {
         }
     }
     public static IList<T> HeapSort<T>(this IList<T> list, Func<T, T, int> comparer) {
-        HeapSortInner(list, comparer, 0, list.Count);
+        HeapSortInner(list, comparer, 0, list.Count, null);
         return list;
     }
-    private static void HeapSortInner<T>(this IList<T> list, Func<T, T, int> comparer, int left, int right) {
+    private static void HeapSortInner<T>(this IList<T> list, Func<T, T, int> comparer, int left, int right, T[]? lefts) {
         int length = right - left;
         if (length <= 1) {
             return;
@@ -4196,9 +4206,12 @@ public static partial class TigerExtensions {
             return;
         }
         int middle = (left + right) / 2;
-        HeapSortInner(list, comparer, left, middle);
-        HeapSortInner(list, comparer, middle, right);
-        T[] lefts = new T[middle - left];
+        lefts ??= new T[middle - left];
+        HeapSortInner(list, comparer, left, middle, lefts);
+        HeapSortInner(list, comparer, middle, right, lefts);
+        if (comparer(list[middle - 1], list[middle]) <= 0) {
+            return;
+        }
         #region Copy
         for (int i = 0; i < middle - left; ++i) {
             lefts[i] = list[i + left];
@@ -4228,11 +4241,12 @@ public static partial class TigerExtensions {
             }
         }
     }
+
     public static List<T> HeapSort<T>(this List<T> list) where T : IComparable<T> {
-        HeapSortInner(list, 0, list.Count);
+        HeapSortInner(list, 0, list.Count, null);
         return list;
     }
-    private static void HeapSortInner<T>(this List<T> list, int left, int right) where T : IComparable<T> {
+    private static void HeapSortInner<T>(this List<T> list, int left, int right, T[]? lefts) where T : IComparable<T> {
         int length = right - left;
         if (length <= 1) {
             return;
@@ -4267,9 +4281,12 @@ public static partial class TigerExtensions {
             return;
         }
         int middle = (left + right) / 2;
-        HeapSortInner(list, left, middle);
-        HeapSortInner(list, middle, right);
-        T[] lefts = new T[middle - left];
+        lefts ??= new T[middle - left];
+        HeapSortInner(list, left, middle, null);
+        HeapSortInner(list, middle, right, null);
+        if (list[middle - 1].CompareTo(list[middle]) <= 0) {
+            return;
+        }
         list.CopyTo(left, lefts, 0, middle - left);
         int indexLeft = 0, indexRight = middle;
         bool rightMoved = false;
@@ -4296,10 +4313,10 @@ public static partial class TigerExtensions {
         }
     }
     public static T[] HeapSort<T>(this T[] list) where T : IComparable<T> {
-        HeapSortInner(list, 0, list.Length);
+        HeapSortInner(list, 0, list.Length, null);
         return list;
     }
-    private static void HeapSortInner<T>(this T[] list, int left, int right) where T : IComparable<T> {
+    private static void HeapSortInner<T>(this T[] list, int left, int right, T[]? lefts) where T : IComparable<T> {
         int length = right - left;
         if (length <= 1) {
             return;
@@ -4334,9 +4351,12 @@ public static partial class TigerExtensions {
             return;
         }
         int middle = (left + right) / 2;
-        HeapSortInner(list, left, middle);
-        HeapSortInner(list, middle, right);
-        T[] lefts = new T[middle - left];
+        lefts ??= new T[middle - left];
+        HeapSortInner(list, left, middle, null);
+        HeapSortInner(list, middle, right, null);
+        if (list[middle - 1].CompareTo(list[middle]) <= 0) {
+            return;
+        }
         Array.Copy(list, left, lefts, 0, middle - left);
         int indexLeft = 0, indexRight = middle;
         bool rightMoved = false;
@@ -4363,10 +4383,10 @@ public static partial class TigerExtensions {
         }
     }
     public static IList<T> HeapSort<T>(this IList<T> list) where T : IComparable<T> {
-        HeapSortInner(list, 0, list.Count);
+        HeapSortInner(list, 0, list.Count, null);
         return list;
     }
-    private static void HeapSortInner<T>(this IList<T> list, int left, int right) where T : IComparable<T> {
+    private static void HeapSortInner<T>(this IList<T> list, int left, int right, T[]? lefts) where T : IComparable<T> {
         int length = right - left;
         if (length <= 1) {
             return;
@@ -4401,9 +4421,12 @@ public static partial class TigerExtensions {
             return;
         }
         int middle = (left + right) / 2;
-        HeapSortInner(list, left, middle);
-        HeapSortInner(list, middle, right);
-        T[] lefts = new T[middle - left];
+        lefts ??= new T[middle - left];
+        HeapSortInner(list, left, middle, null);
+        HeapSortInner(list, middle, right, null);
+        if (list[middle - 1].CompareTo(list[middle]) <= 0) {
+            return;
+        }
         #region Copy
         for (int i = 0; i < middle - left; ++i) {
             lefts[i] = list[i + left];
