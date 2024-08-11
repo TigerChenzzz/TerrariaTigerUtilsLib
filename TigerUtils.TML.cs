@@ -568,9 +568,17 @@ public static partial class TigerUtils {
     #endregion
     public static T TMLInstance<T>() where T : class => ContentInstance<T>.Instance;
     public static Texture2D TextureFromColors(int width, int height, Color[] colors) {
-        Texture2D result = new(Main.instance.GraphicsDevice, width, height);
-        result.SetData(colors);
-        return result;
+        if (ThreadCheck.IsMainThread) {
+            Texture2D result = new(Main.instance.GraphicsDevice, width, height);
+            result.SetData(colors);
+            return result;
+        }
+        var task = Main.RunOnMainThread(() => {
+            Texture2D result = new(Main.instance.GraphicsDevice, width, height);
+            result.SetData(colors);
+            return result;
+        });
+        return task.GetAwaiter().GetResult();
     }
     /// <summary>
     /// 在游戏时调用, 用以直接保存并退出
@@ -2287,6 +2295,9 @@ public static partial class TigerExtensions {
         color ??= new Color(63, 65, 151, 255) * 0.785f;
         spriteBatch.Draw9PieceF(TextureAssets.InventoryBack13.Value, x, y, w, h, color.Value, 10, destinationLeft: border);
     }
+    /// <summary>
+    /// 自定透明度
+    /// </summary>
     public static void DrawInvBGT(this SpriteBatch spriteBatch, int x, int y, int w, int h, int border = 10, float transparency = 0.785f) {
         spriteBatch.Draw9PieceF(TextureAssets.InventoryBack13.Value, x, y, w, h, new Color(63, 65, 151, 255) * transparency, 10, destinationLeft: border);
     }
@@ -2339,6 +2350,7 @@ public static partial class TigerExtensions {
     }
     #endregion
     #region UI
+
     #region SetPositionAndSize
     public static void SetPositionAndSize(this UIElement self, float leftPixels, float leftPercent, float topPixels, float topPercent, float widthPixels, float widthPercent, float heightPixels, float heightPercent) {
         self.Top.Set(topPixels, topPercent);
@@ -2390,6 +2402,7 @@ public static partial class TigerExtensions {
     public static void SetRight(this UIElement self, float rightPixels) => self.Left.Pixels = rightPixels - self.Width.Pixels;
     public static void SetBottom(this UIElement self, float bottomPixels, float bottomPercent) => self.Top.Set(bottomPixels - self.Height.Pixels, bottomPercent - self.Height.Percent);
     public static void SetBottom(this UIElement self, float bottomPixels) => self.Top.Pixels = bottomPixels - self.Height.Pixels;
+    #endregion
     #region Expand
     public static void ExpandLeft(this UIElement self, float leftPixels) => self.SetX(leftPixels, self.Left.Pixels + self.Width.Pixels - leftPixels);
     public static void ExpandTop(this UIElement self, float topPixels) => self.SetY(topPixels, self.Top.Pixels + self.Height.Pixels - topPixels);
@@ -2397,6 +2410,27 @@ public static partial class TigerExtensions {
     public static void ExpandBottom(this UIElement self, float bottomPixels) => self.Height.Pixels = bottomPixels - self.Top.Pixels;
     public static void ExpandRightWithLeft(this UIElement self, float leftPixels) => self.Width.Pixels += leftPixels - self.Left.Pixels;
     public static void ExpandBottomWithTop(this UIElement self, float topPixels) => self.Height.Pixels += topPixels - self.Top.Pixels;
+    /// <summary>
+    /// 朝左右伸展
+    /// </summary>
+    public static void ExpandSizeX(this UIElement self, float size) {
+        self.Left.Pixels -= size;
+        self.Width.Pixels += 2 * size;
+    }
+    /// <summary>
+    /// 朝上下伸展
+    /// </summary>
+    public static void ExpandSizeY(this UIElement self, float size) {
+        self.Top.Pixels -= size;
+        self.Height.Pixels += 2 * size;
+    }
+    /// <summary>
+    /// 朝四周伸展
+    /// </summary>
+    public static void ExpandSize(this UIElement self, float size) {
+        ExpandSizeX(self, size);
+        ExpandSizeY(self, size);
+    }
     #region ExpandWithMin
     public static void ExpandLeftWithMinWidth(this UIElement self, float leftPixels, float minWidthPixels) {
         float rightPixels = self.Left.Pixels + self.Width.Pixels;
@@ -2446,7 +2480,6 @@ public static partial class TigerExtensions {
     public static void ExpandBottomWidthTopWithRange(this UIElement self, float topPixels, float minHeightPixels, float maxHeightPixels) => self.Height.Pixels = (self.Height.Pixels + topPixels - self.Top.Pixels).Clamp(minHeightPixels, maxHeightPixels);
     #endregion
     #endregion
-    #endregion
     #region SetDimensions
     public static void SetDimensions(this UIElement self, CalculatedStyle dimensions) => self._dimensions = dimensions;
     public static void SetInnerDimensions(this UIElement self, CalculatedStyle dimensions) => self._innerDimensions = dimensions;
@@ -2456,12 +2489,21 @@ public static partial class TigerExtensions {
     public static ref CalculatedStyle GetOuterDimensionsRef(this UIElement self) => ref self._outerDimensions;
     #endregion
     #region SetParent
-    private static readonly ValueDG<Action<UIElement, UIElement?>> setParentDelegate = new(() => GetSetFieldDelegate<UIElement, UIElement?>(nameof(UIElement.Parent)));
-    public static void SetParent(this UIElement self, UIElement? parent) => setParentDelegate.Value(self, parent);
+    public static void SetParent(this UIElement self, UIElement? parent) => self.Parent = parent;
     #endregion
     #region 获取一些属性
     private static readonly ValueDG<Func<UIScrollbar, bool>> getUIScrollbarIsDraggingDelegate = new(() => GetGetFieldDelegate<UIScrollbar, bool>("_isDragging"));
     public static bool IsDragging(this UIScrollbar self) => getUIScrollbarIsDraggingDelegate.Value(self);
+    public static List<UIElement> GetElements(this UIElement self) => self.Elements;
+    public static StyleDimension GetRight(this UIElement self) => new(self.Left.Pixels + self.Width.Pixels, self.Left.Percent + self.Width.Percent);
+    public static StyleDimension GetBottom(this UIElement self) => new(self.Top.Pixels + self.Height.Pixels, self.Top.Percent + self.Height.Percent);
+    public static float GetRightPixels(this UIElement self) => self.Left.Pixels + self.Width.Pixels;
+    public static float GetRightPercent(this UIElement self) => self.Left.Percent + self.Width.Percent;
+    public static float GetBottomPixels(this UIElement self) => self.Top.Pixels + self.Height.Pixels;
+    public static float GetBottomPercent(this UIElement self) => self.Top.Percent + self.Height.Percent;
+    // 由于把 TigerUtils 中的 GetRight 覆盖了所以这里重新写一份
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static TRight GetRight<TLeft, TRight>(TLeft left, TRight right) => TigerUtils.GetRight(left, right);
     #endregion
     #region DragOutline
     /// <summary>
@@ -2545,10 +2587,56 @@ public static partial class TigerExtensions {
         };
     }
     #endregion
+    #region 操作 UIElement 的 Elements
+    public static void RemoveAt(this UIElement self, int index) {
+        self.Elements.RemoveAt(index);
+        self.Elements[index].Parent = null;
+    }
+    public static void RemoveRange(this UIElement self, int index, int count) {
+        self.Elements.RemoveRange(index, count);
+        for (int i = index; i < index + count; ++i) {
+            self.Elements[i].Parent = null;
+        }
+    }
+    public static void Insert(this UIElement self, int index, UIElement child) {
+        child.Remove();
+        child.Parent = self;
+        self.Elements.Insert(index, child);
+        child.Recalculate();
+    }
+    public static void InsertRange(this UIElement self, int index, IEnumerable<UIElement> children) {
+        foreach (var child in children) {
+            child.Remove();
+            child.Parent = self;
+        }
+        self.Elements.InsertRange(index, children);
+        foreach (var child in children) {
+            child.Recalculate();
+        }
+    }
+    #endregion
     #region UI杂项
     public static bool ContainsPoint(this CalculatedStyle dimensions, Vector2 point) {
         return point.X >= dimensions.X && point.X <= dimensions.X + dimensions.Width && point.Y >= dimensions.Y && point.Y <= dimensions.Y + dimensions.Height;
     }
+    public static void RecalculateSelf(this UIElement self) {
+		CalculatedStyle parentDimensions = ((self.Parent == null) ? UserInterface.ActiveInstance.GetDimensions() : self.Parent.GetInnerDimensions());
+		if (self.Parent != null && self.Parent is UIList)
+			parentDimensions.Height = float.MaxValue;
+
+		CalculatedStyle calculatedStyle = (self._outerDimensions = self.GetDimensionsBasedOnParentDimensions(parentDimensions));
+		calculatedStyle.X += self.MarginLeft;
+		calculatedStyle.Y += self.MarginTop;
+		calculatedStyle.Width -= self.MarginLeft + self.MarginRight;
+		calculatedStyle.Height -= self.MarginTop + self.MarginBottom;
+		self._dimensions = calculatedStyle;
+		calculatedStyle.X += self.PaddingLeft;
+		calculatedStyle.Y += self.PaddingTop;
+		calculatedStyle.Width -= self.PaddingLeft + self.PaddingRight;
+		calculatedStyle.Height -= self.PaddingTop + self.PaddingBottom;
+		self._innerDimensions = calculatedStyle;
+    }
     #endregion
+
     #endregion
 }
