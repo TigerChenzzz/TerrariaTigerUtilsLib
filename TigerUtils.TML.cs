@@ -21,6 +21,7 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
+using Terraria.ModLoader.Config;
 using Terraria.ModLoader.Core;
 using Terraria.ModLoader.IO;
 using Terraria.UI;
@@ -478,93 +479,13 @@ public static partial class TigerUtils {
         #endregion
     }
     #endregion
-    #region 对 TML 内的一些东西的反射
-    public static class TMLReflection {
-        public const BindingFlags bfall = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-
-        public const BindingFlags bfpi = BindingFlags.Public | BindingFlags.Instance;
-        public const BindingFlags bfps = BindingFlags.Public | BindingFlags.Static;
-        public const BindingFlags bfni = BindingFlags.NonPublic | BindingFlags.Instance;
-        public const BindingFlags bfns = BindingFlags.NonPublic | BindingFlags.Static;
-
-        public const BindingFlags bfp = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
-        public const BindingFlags bfn = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
-        public const BindingFlags bfi = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-        public const BindingFlags bfs = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-
-        private static Assembly? assembly;
-        public static Assembly Assembly => assembly ??= typeof(Main).Assembly;
-        public static class Types {
-            private static Dictionary<string, Type>? allTypes;
-            public static Dictionary<string, Type> AllTypes => allTypes ?? InitTypes();
-            private static Dictionary<string, Type> InitTypes() {
-                allTypes = [];
-                foreach (var type in typeof(Terraria.Main).Assembly.GetTypes()) {
-                    if (type.FullName != null) {
-                        allTypes.Add(type.FullName, type);
-                    }
-                }
-                return allTypes;
-            }
-            public static Type UIModConfig => AllTypes["Terraria.ModLoader.Config.UI.UIModConfig"];
-            public static Type ModCompile => AllTypes["Terraria.ModLoader.Core.ModCompile"];
-        }
-        public static class Item {
-            public static readonly ValueDG<Type> Type = new(() => typeof(Terraria.Item));
-            public static readonly ValueDG<MethodInfo> Clone = new(() => Type.Value.GetMethod(nameof(Terraria.Item.Clone), bfpi)!);
-        }
-        public static class Main {
-            public static readonly ValueDG<Type> Type = new(() => typeof(Terraria.Main));
-            public static readonly ValueDG<FieldInfo> MouseItem = new(() => Type.Value.GetField(nameof(Terraria.Main.mouseItem), bfps)!);
-        }
-        public static class Player {
-            public static readonly ValueDG<Type> Type = new(() => typeof(Terraria.Player));
-            public static readonly ValueDG<FieldInfo> Inventory = new(() => Type.Value.GetField(nameof(Terraria.Player.inventory), bfpi)!);
-            public static readonly ValueDG<FieldInfo> ManaRegen = new(() => Type.Value.GetField(nameof(Terraria.Player.manaRegen), bfpi)!);
-            public static readonly ValueDG<FieldInfo> ManaRegenCount = new(() => Type.Value.GetField(nameof(Terraria.Player.manaRegenCount), bfpi)!);
-            public static readonly ValueDG<FieldInfo> NebulaLevelMana = new(() => Type.Value.GetField(nameof(Terraria.Player.nebulaLevelMana), bfpi)!);
-            public static readonly ValueDG<FieldInfo> NebulaManaCounter = new(() => Type.Value.GetField(nameof(Terraria.Player.nebulaManaCounter), bfpi)!);
-            public static readonly ValueDG<FieldInfo> StatMana = new(() => Type.Value.GetField(nameof(Terraria.Player.statMana), bfpi)!);
-            public static readonly ValueDG<FieldInfo> StatManaMax = new(() => Type.Value.GetField(nameof(Terraria.Player.statManaMax), bfpi)!);
-            public static readonly ValueDG<FieldInfo> StatManaMax2 = new(() => Type.Value.GetField(nameof(Terraria.Player.statManaMax2), bfpi)!);
-            public static readonly ValueDG<MethodInfo> DropItemCheck = new(() => Type.Value.GetMethod(nameof(Terraria.Player.dropItemCheck), bfpi)!);
-            public static readonly ValueDG<MethodInfo> ItemCheck_Shoot = new(() => Type.Value.GetMethod("ItemCheck_Shoot", bfni)!);
-        }
-        public static class ProjectileLoader {
-            public static readonly ValueDG<Type> Type = new(() => typeof(Terraria.ModLoader.ProjectileLoader));
-            public static readonly ValueDG<MethodInfo> OnSpawn = new(() => Type.Value.GetMethod("OnSpawn", bfns)!);
-            public delegate void OnSpawnDelegate(Projectile projectile, IEntitySource source);
-        }
-        public static class UIModConfig {
-            public static Type Type => Types.AllTypes["UIModConfig"];
-            private static PropertyInfo? tooltip;
-            private static PropertyInfo Tooltip => tooltip ??= Type.GetProperty("Tooltip", BindingFlags.Public | BindingFlags.Static)!;
-            private static Action<string>? setTooltip;
-            public static Action<string> SetTooltip_Func => setTooltip ??= Tooltip.SetMethod!.CreateDelegate<Action<string>>(null);
-            private static Func<string>? getTooltip;
-            public static Func<string> GetTooltip_Func => getTooltip ??= Tooltip.GetMethod!.CreateDelegate<Func<string>>(null);
-        }
-        public static class ConfigManager {
-            public static readonly ValueDG<Type> Type = new(() => typeof(Terraria.ModLoader.Config.ConfigManager));
-            public static readonly ValueDG<MethodInfo> Save = new(() => Type.Value.GetMethod("Save", bfns)!);
-            public static readonly ValueDG<Action<Terraria.ModLoader.Config.ModConfig>> Save_Func = new(Save.Value.CreateDelegate<Action<Terraria.ModLoader.Config.ModConfig>>);
-        }
-        public static class ModCompile {
-            public static readonly ValueDG<Type> Type = new(() => Types.ModCompile);
-            public static readonly ValueDG<PropertyInfo> DeveloperMode = new(() => Type.Value.GetProperty("DeveloperMode", bfps)!);
-            public static readonly ValueDG<Func<bool>> GetDeveloperMode_Func = new(() => DeveloperMode.Value.GetMethod!.CreateDelegate<Func<bool>>(null));
-            public static readonly ValueDG<MethodInfo> FindModSources = new(() => Type.Value.GetMethod("FindModSources", bfns)!);
-            public static readonly ValueDG<Func<string[]>> FindModSources_Func = new(() => FindModSources.Value.CreateDelegate<Func<string[]>>(null));
-        }
-    }
-    #endregion
     #region 杂项
 
     #region 获取是否是开发者模式
     /// <summary>
     /// 获取是否是开发者模式
     /// </summary>
-    public static bool IsTMLInDeveloperMode => TMLReflection.ModCompile.GetDeveloperMode_Func.Value();
+    public static bool IsTMLInDeveloperMode => ModCompile.DeveloperMode;
     #endregion
     public static T TMLInstance<T>() where T : class => ContentInstance<T>.Instance;
     public static Texture2D TextureFromColors(int width, int height, Color[] colors) {
@@ -2510,6 +2431,7 @@ public static partial class TigerExtensions {
     /// <br/>创造一个用以改变边框大小的外框
     /// <br/>会将 <paramref name="self"/> 设置为 <paramref name="outline"/> 的子元素
     /// <br/>并根据 <paramref name="size"/> 自动设置 <paramref name="self"/> 的大小
+    /// <br/>当 <paramref name="outline"/> 的 Width.Percent 或 Height.Percent 非 0 时大小限制会出现问题
     /// </summary>
     /// <param name="size">
     /// <br/>边框大小
@@ -2539,6 +2461,10 @@ public static partial class TigerExtensions {
         Vector2 mouseDelta = default;
         outline.Append(self);
         self.SetPositionAndSize(size, 0, size, 0, -size * 2, 1, -size * 2, 1);
+        outline.MinWidth.Pixels = minWidthPixels;
+        outline.MinHeight.Pixels = minHeightPixels;
+        outline.MaxWidth.Pixels = maxWidthPixels;
+        outline.MaxHeight.Pixels = maxHeightPixels;
         outline.OnLeftMouseDown += (evt, element) => {
             var mouse = Main.MouseScreen;
             var dim = self.GetDimensions();

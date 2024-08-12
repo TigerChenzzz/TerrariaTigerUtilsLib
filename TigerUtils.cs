@@ -1426,7 +1426,7 @@ public static partial class TigerUtils {
         return result;
     }
     #region 流程控制 - 条件
-    #region DoIf & GetIf
+    #region DoIf
     /// <summary>
     /// 若<paramref name="condition"/>为<see langword="true"/>则调用<paramref name="action"/>.
     /// </summary>
@@ -1552,7 +1552,8 @@ public static partial class TigerUtils {
         }
         return condition;
     }
-
+    #endregion
+    #region GetIf
     public static TResult? GetIf<TResult>(bool condition, Func<TResult> action, TResult? defaultResult = default) {
         if (condition) {
             return action.Invoke();
@@ -2105,6 +2106,159 @@ public static partial class TigerUtils {
         if (trigger) {
             trigger = false;
             action();
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<T>(ref bool trigger, Action<T> action, T t) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<T1, T2>(ref bool trigger, Action<T1, T2> action, T1 t1, T2 t2) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<T1, T2, T3>(ref bool trigger, Action<T1, T2, T3> action, T1 t1, T2 t2, T3 t3) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<T1, T2, T3, T4>(ref bool trigger, Action<T1, T2, T3, T4> action, T1 t1, T2 t2, T3 t3, T4 t4) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<T1, T2, T3, T4, T5>(ref bool trigger, Action<T1, T2, T3, T4, T5> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4, t5);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<T1, T2, T3, T4, T5, T6>(ref bool trigger, Action<T1, T2, T3, T4, T5, T6> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4, t5, t6);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<T1, T2, T3, T4, T5, T6, T7>(ref bool trigger, Action<T1, T2, T3, T4, T5, T6, T7> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4, t5, t6, t7);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<T1, T2, T3, T4, T5, T6, T7, T8>(ref bool trigger, Action<T1, T2, T3, T4, T5, T6, T7, T8> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4, t5, t6, t7, t8);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<T1, T2, T3, T4, T5, T6, T7, T8, T9>(ref bool trigger, Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4, t5, t6, t7, t8, t9);
+            return true;
+        }
+        return false;
+    }
+    
+    public static bool DoTrigger<TResult>(ref bool trigger, Func<TResult> action) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke();
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<TResult, T>(ref bool trigger, Func<T, TResult> action, T t) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<TResult, T1, T2>(ref bool trigger, Func<T1, T2, TResult> action, T1 t1, T2 t2) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<TResult, T1, T2, T3>(ref bool trigger, Func<T1, T2, T3, TResult> action, T1 t1, T2 t2, T3 t3) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<TResult, T1, T2, T3, T4>(ref bool trigger, Func<T1, T2, T3, T4, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<TResult, T1, T2, T3, T4, T5>(ref bool trigger, Func<T1, T2, T3, T4, T5, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4, t5);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<TResult, T1, T2, T3, T4, T5, T6>(ref bool trigger, Func<T1, T2, T3, T4, T5, T6, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4, t5, t6);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<TResult, T1, T2, T3, T4, T5, T6, T7>(ref bool trigger, Func<T1, T2, T3, T4, T5, T6, T7, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4, t5, t6, t7);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<TResult, T1, T2, T3, T4, T5, T6, T7, T8>(ref bool trigger, Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4, t5, t6, t7, t8);
+            return true;
+        }
+        return false;
+    }
+    public static bool DoTrigger<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>(ref bool trigger, Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9) {
+        if (trigger) {
+            trigger = false;
+            action.Invoke(t1, t2, t3, t4, t5, t6, t7, t8, t9);
             return true;
         }
         return false;
@@ -4981,6 +5135,7 @@ public static partial class TigerExtensions {
             }
         }
     }
+    #region AddElement
     public static void AddElement<TKey, TElement>(this IDictionary<TKey, List<TElement>> dictionary, TKey key, TElement element) where TKey : notnull {
         if (dictionary.TryGetValue(key, out List<TElement>? value)) {
             value.Add(element);
@@ -5005,6 +5160,32 @@ public static partial class TigerExtensions {
             dictionary.Add(key, elementList);
         }
     }
+    
+    public static void AddElement<TKey, TList, TElement>(this IDictionary<TKey, TList> dictionary, TKey key, TElement element) where TKey : notnull where TList : IList<TElement>, new() {
+        if (dictionary.TryGetValue(key, out TList? value)) {
+            value.Add(element);
+        }
+        else {
+            dictionary.Add(key, [element]);
+        }
+    }
+    public static void AddElementRange<TKey, TList, TElement>(this Dictionary<TKey, TList> dictionary, TKey key, IEnumerable<TElement> elements) where TKey : notnull where TList : IList<TElement>, new() {
+        if (dictionary.TryGetValue(key, out TList? value)) {
+            value.AddRange(elements);
+        }
+        else {
+            dictionary.Add(key, [.. elements]);
+        }
+    }
+    public static void AddElementRange<TKey, TList, TElement>(this Dictionary<TKey, TList> dictionary, TKey key, TList elementList) where TKey : notnull where TList : IList<TElement>, new() {
+        if (dictionary.TryGetValue(key, out TList? value)) {
+            value.AddRange(elementList);
+        }
+        else {
+            dictionary.Add(key, elementList);
+        }
+    }
+    #endregion
     public static void RemoveAll<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, Func<TKey, TValue, bool> predicate) where TKey : notnull {
         List<TKey> toRemove = [];
         foreach (var (key, value) in dictionary) {
