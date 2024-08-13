@@ -10,5 +10,6 @@
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Solaestas.tModLoader.ModBuilder" Version="1.6.1" />
+    <Publicize Include="ReLogic" />
 	</ItemGroup>
 </Project>

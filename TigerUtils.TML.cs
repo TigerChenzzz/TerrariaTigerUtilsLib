@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading.Tasks;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent;
@@ -501,6 +502,21 @@ public static partial class TigerUtils {
         });
         return task.GetAwaiter().GetResult();
     }
+    public static async Task<Texture2D> TextureFromColorsAsync(int width, int height, Color[] colors) {
+        if (ThreadCheck.IsMainThread) {
+            Texture2D result = new(Main.instance.GraphicsDevice, width, height);
+            result.SetData(colors);
+            return result;
+        }
+        return await Main.RunOnMainThread(() => {
+            Texture2D result = new(Main.instance.GraphicsDevice, width, height);
+            result.SetData(colors);
+            return result;
+        });
+    }
+    public static Asset<Texture2D> AssetTextureFromColors(int width, int height, Color[] colors, bool immediate = false) {
+        return TextureFromColorsAsync(width, height, colors).ToAsset("TextureFromColors", immediate);
+    }
     /// <summary>
     /// 在游戏时调用, 用以直接保存并退出
     /// </summary>
@@ -727,25 +743,24 @@ public static partial class TigerClasses {
     public static partial class Textures {
         public static ColorsClass Colors { get; } = new();
         public class ColorsClass {
-            public readonly Texture2D White  = TextureFromColors(1, 1, [Color.White ]);
-            public readonly Texture2D Black  = TextureFromColors(1, 1, [Color.Black ]);
-            public readonly Texture2D Gray   = TextureFromColors(1, 1, [Color.Gray  ]);
-            public readonly Texture2D Red    = TextureFromColors(1, 1, [Color.Red   ]);
-            public readonly Texture2D Orange = TextureFromColors(1, 1, [Color.Orange]);
-            public readonly Texture2D Yellow = TextureFromColors(1, 1, [Color.Yellow]);
-            public readonly Texture2D Green  = TextureFromColors(1, 1, [Color.Green ]);
-            public readonly Texture2D Blue   = TextureFromColors(1, 1, [Color.Blue  ]);
-            public readonly Texture2D Purple = TextureFromColors(1, 1, [Color.Purple]);
-            private static readonly Dictionary<Color, Texture2D> colorsCache = [];
-            public Texture2D this[Color color] {
-                get {
-                    if (colorsCache.TryGetValue(color, out var value)) {
-                        return value;
-                    }
-                    value = TextureFromColors(1, 1, [color]);
-                    colorsCache.Add(color, value);
+            public readonly Asset<Texture2D> White  = GetColorTexture(Color.White );
+            public readonly Asset<Texture2D> Black  = GetColorTexture(Color.Black );
+            public readonly Asset<Texture2D> Gray   = GetColorTexture(Color.Gray  );
+            public readonly Asset<Texture2D> Red    = GetColorTexture(Color.Red   );
+            public readonly Asset<Texture2D> Orange = GetColorTexture(Color.Orange);
+            public readonly Asset<Texture2D> Yellow = GetColorTexture(Color.Yellow);
+            public readonly Asset<Texture2D> Green  = GetColorTexture(Color.Green );
+            public readonly Asset<Texture2D> Blue   = GetColorTexture(Color.Blue  );
+            public readonly Asset<Texture2D> Purple = GetColorTexture(Color.Purple);
+            private static readonly Dictionary<Color, Asset<Texture2D>> colorsCache = [];
+            public Asset<Texture2D> this[Color color] => GetColorTexture(color);
+            private static Asset<Texture2D> GetColorTexture(Color color) {
+                if (colorsCache.TryGetValue(color, out var value)) {
                     return value;
                 }
+                value = AssetTextureFromColors(1, 1, [color]);
+                colorsCache.Add(color, value);
+                return value;
             }
             public static void ClearCache() => colorsCache.Clear();
         }
@@ -2236,7 +2251,7 @@ public static partial class TigerExtensions {
         Vector2 scale = new(distance, width);
         float rotation = (end - start).ToRotation();
         Vector2 origin = new(0, 0.5f);
-        spriteBatch.Draw(Textures.Colors.White, start, null, color.Value, rotation, origin, scale, SpriteEffects.None, 0);
+        spriteBatch.Draw(Textures.Colors.White.Value, start, null, color.Value, rotation, origin, scale, SpriteEffects.None, 0);
     }
     /// <summary>
     /// 依据世界坐标画线
@@ -2258,7 +2273,7 @@ public static partial class TigerExtensions {
     /// <param name="color">颜色, 默认白</param>
     public static void DrawRectWithCenter(this SpriteBatch spriteBatch, Vector2 center, float width = 1, float height = 1, float rotation = 0f, Color? color = null) {
         color ??= Color.White;
-        spriteBatch.Draw(Textures.Colors.White, center, null, color.Value, rotation, new Vector2(0.5f), new Vector2(width, height), SpriteEffects.None, 0);
+        spriteBatch.Draw(Textures.Colors.White.Value, center, null, color.Value, rotation, new Vector2(0.5f), new Vector2(width, height), SpriteEffects.None, 0);
     }
     #endregion
     #endregion
@@ -2564,5 +2579,28 @@ public static partial class TigerExtensions {
     }
     #endregion
 
+    #endregion
+    #region 杂项
+    public static Asset<T> ToAsset<T>(this Task<T> self, string assetName, bool immediate = false) where T : class {
+        Asset<T> asset = new(assetName);
+        if (self.IsCompleted) {
+            Assert(self.IsCompletedSuccessfully, "Task not completed successfully");
+            asset.SubmitLoadedContent(self.Result, null);
+            return asset;
+        }
+        if (immediate) {
+            self.Wait();
+            Assert(self.IsCompletedSuccessfully, "Task not completed successfully");
+            asset.SubmitLoadedContent(self.Result, null);
+            return asset;
+        }
+        asset.SetToLoadingState();
+        var task = self.ContinueWith(s => {
+            Assert(s.IsCompletedSuccessfully, "Task not completed successfully");
+            asset.SubmitLoadedContent(s.Result, null);
+        });
+        asset.Wait = self.Wait;
+        return asset;
+    }
     #endregion
 }
