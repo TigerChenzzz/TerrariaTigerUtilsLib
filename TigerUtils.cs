@@ -2888,12 +2888,6 @@ public static partial class TigerUtils {
     public class CustomComparer<T>(Func<T?, T?, int> compare) : IComparer<T> {
         public int Compare(T? x, T? y) => compare(x, y);
     }
-    public class AssertFailException(string? message) : Exception(message) { }
-    public static void Assert(bool condition, string failMessage) {
-        if (!condition) {
-            throw new AssertFailException(failMessage);
-        }
-    }
     #endregion
 }
 
@@ -2906,6 +2900,7 @@ public static partial class TigerClasses {
     /// <summary>
     /// Value that is defaulted when got
     /// </summary>
+    [Obsolete($"线程不安全, 使用{nameof(Lazy<T>)}代替")]
     public class ValueDG<T>(Func<T> getDefaultValue) {
         private T? value;
         private bool got;

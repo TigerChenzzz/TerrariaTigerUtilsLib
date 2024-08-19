@@ -1,15 +1,22 @@
-﻿using System;
+﻿using log4net;
+using MonoMod.RuntimeDetour;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using Terraria;
 using Terraria.DataStructures;
 using TMLConfigManager = Terraria.ModLoader.Config.ConfigManager;
+using TMLDelegate = System.Delegate;
+using TMLItem = Terraria.Item;
+using TMLLogging = Terraria.ModLoader.Logging;
+using TMLMain = Terraria.Main;
 using TMLMod = Terraria.ModLoader.Mod;
 using TMLModConfig = Terraria.ModLoader.Config.ModConfig;
+using TMLMonoModHooks = Terraria.ModLoader.MonoModHooks;
 using TMLPlayer = Terraria.Player;
-using TMLItem = Terraria.Item;
-using TMLMain = Terraria.Main;
 using TMLProjectileLoader = Terraria.ModLoader.ProjectileLoader;
+using TMLSamplerState = Microsoft.Xna.Framework.Graphics.SamplerState;
+using TMLSpriteBatch = Microsoft.Xna.Framework.Graphics.SpriteBatch;
 using TMLUIModConfig = Terraria.ModLoader.Config.UI.UIModConfig;
 
 namespace TigerUtilsLib;
@@ -20,8 +27,34 @@ public static partial class TigerUtils {
             public static void Save(TMLModConfig config) => TMLConfigManager.Save(config);
             public static IDictionary<TMLMod, List<TMLModConfig>> Configs => TMLConfigManager.Configs;
         }
+        public static class Logging {
+            public static ILog TML => TMLLogging.tML;
+            public static ILog Terraria => TMLLogging.Terraria;
+        }
+        public static class MonoModHooks {
+            public static string StringRep(MethodBase m) => TMLMonoModHooks.StringRep(m);
+            /// <summary>
+            /// <br/>由于使用了 TML 的私有类作为返回值所以在不公开 TML 的库中无法使用,
+            /// <br/>请使用 <see cref="GetDetours(Assembly)"/> 和 <see cref="GetIlHooks(Assembly)"/> 代替
+            /// </summary>
+            public static TMLMonoModHooks.DetourList GetDetourList(Assembly asm) => TMLMonoModHooks.GetDetourList(asm);
+            public static List<DetourInfo> GetDetours(Assembly asm) {
+                return GetDetourList(asm).detours;
+            }
+            public static List<ILHookInfo> GetIlHooks(Assembly asm) {
+                return GetDetourList(asm).ilHooks;
+            }
+        }
         public static class Player {
             public static void ItemCheck_Shoot(TMLPlayer player, int whoAmI, TMLItem sItem, int weaponDamage) => player.ItemCheck_Shoot(whoAmI, sItem, weaponDamage);
+        }
+        public static class SpriteBatch {
+            public static TMLSamplerState GetSamplerState(TMLSpriteBatch spriteBatch) => spriteBatch.samplerState;
+            /// <summary>
+            /// 默认是 <see cref="TMLSamplerState.LinearClamp"/>
+            /// 将它设置为 <see cref="TMLSamplerState.PointClamp"/> 可以让像素不再模糊
+            /// </summary>
+            public static void SetSamplerState(TMLSpriteBatch spriteBatch, TMLSamplerState state) => spriteBatch.samplerState = state;
         }
         public static class UIModConfig {
             public static string Tooltip {
@@ -31,6 +64,7 @@ public static partial class TigerUtils {
         }
     }
     public static class TMLReflection {
+        #region consts
         public const BindingFlags bfall = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
 
         public const BindingFlags bfpi = BindingFlags.Public | BindingFlags.Instance;
@@ -42,9 +76,11 @@ public static partial class TigerUtils {
         public const BindingFlags bfn = BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
         public const BindingFlags bfi = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
         public const BindingFlags bfs = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
+        #endregion
 
         private static Assembly? assembly;
         public static Assembly Assembly => assembly ??= typeof(Main).Assembly;
+
         public static class Types {
             static Types() {
                 AllTypes = [];
@@ -60,6 +96,16 @@ public static partial class TigerUtils {
             public static Type UIModConfig { get; private set; }
             public static Type ModCompile { get; private set; }
         }
+
+        public static class ConfigManager {
+            public static readonly Type Type = typeof(TMLConfigManager);
+            public static readonly MethodInfo Save = Type.GetMethod(nameof(TMLConfigManager.Save), bfns)!;
+        }
+        public static class Delegate {
+            public static readonly Type Type = typeof(TMLDelegate);
+            // _invocationList ?
+
+        }
         public static class Item {
             public static readonly Type Type = typeof(TMLItem);
             public static readonly MethodInfo Clone = Type.GetMethod(nameof(TMLItem.Clone), bfpi)!;
@@ -67,6 +113,11 @@ public static partial class TigerUtils {
         public static class Main {
             public static readonly Type Type = typeof(TMLMain);
             public static readonly FieldInfo MouseItem = Type.GetField(nameof(TMLMain.mouseItem), bfps)!;
+        }
+        public static class ModCompile {
+            public static readonly Type Type = Types.ModCompile;
+            public static readonly PropertyInfo DeveloperMode = Type.GetProperty("DeveloperMode", bfps)!;
+            public static readonly MethodInfo FindModSources = Type.GetMethod("FindModSources", bfns)!;
         }
         public static class Player {
             static Player() {
@@ -115,15 +166,6 @@ public static partial class TigerUtils {
         public static class UIModConfig {
             public static readonly Type Type = typeof(TMLUIModConfig);
             public static readonly PropertyInfo Tooltip = Type.GetProperty(nameof(TMLUIModConfig.Tooltip), bfps)!;
-        }
-        public static class ConfigManager {
-            public static readonly Type Type = typeof(TMLConfigManager);
-            public static readonly MethodInfo Save = Type.GetMethod(nameof(TMLConfigManager.Save), bfns)!;
-        }
-        public static class ModCompile {
-            public static readonly Type Type = Types.ModCompile;
-            public static readonly PropertyInfo DeveloperMode = Type.GetProperty("DeveloperMode", bfps)!;
-            public static readonly MethodInfo FindModSources = Type.GetMethod("FindModSources", bfns)!;
         }
     }
 }

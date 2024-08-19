@@ -1,14 +1,13 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using MonoMod.Utils;
+using MonoMod.RuntimeDetour;
 using ReLogic.Content;
 using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -22,9 +21,9 @@ using Terraria.GameContent.UI.Elements;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
-using Terraria.ModLoader.Config;
 using Terraria.ModLoader.Core;
 using Terraria.ModLoader.IO;
+using Terraria.Social.Steam;
 using Terraria.UI;
 using Terraria.Utilities;
 
@@ -490,39 +489,70 @@ public static partial class TigerUtils {
     #endregion
     public static T TMLInstance<T>() where T : class => ContentInstance<T>.Instance;
     public static Texture2D TextureFromColors(int width, int height, Color[] colors) {
-        if (ThreadCheck.IsMainThread) {
-            Texture2D result = new(Main.instance.GraphicsDevice, width, height);
-            result.SetData(colors);
-            return result;
-        }
-        var task = Main.RunOnMainThread(() => {
-            Texture2D result = new(Main.instance.GraphicsDevice, width, height);
-            result.SetData(colors);
-            return result;
-        });
-        return task.GetAwaiter().GetResult();
+        return DoOnMainThread(() => TextureFromColorsInner(width, height, colors));
     }
-    public static async Task<Texture2D> TextureFromColorsAsync(int width, int height, Color[] colors) {
-        if (ThreadCheck.IsMainThread) {
-            Texture2D result = new(Main.instance.GraphicsDevice, width, height);
-            result.SetData(colors);
-            return result;
-        }
-        return await Main.RunOnMainThread(() => {
-            Texture2D result = new(Main.instance.GraphicsDevice, width, height);
-            result.SetData(colors);
-            return result;
-        });
+    public static Task<Texture2D> TextureFromColorsAsync(int width, int height, Color[] colors) {
+        return DoOnMainThreadAsync(() => TextureFromColorsInner(width, height, colors));
+    }
+    private static Texture2D TextureFromColorsInner(int width, int height, Color[] colors) {
+        Texture2D result = new(Main.instance.GraphicsDevice, width, height);
+        result.SetData(colors);
+        return result;
     }
     public static Asset<Texture2D> AssetTextureFromColors(int width, int height, Color[] colors, bool immediate = false) {
         return TextureFromColorsAsync(width, height, colors).ToAsset("TextureFromColors", immediate);
     }
+    #region DoOnMainThread
+    /// <summary>
+    /// 若在主线程则直接执行, 否则安排到主线程执行
+    /// </summary>
+    /// <param name="wait">在非主线程时是否等待到任务完成时</param>
+    public static void DoOnMainThread(Action action, bool wait = true) {
+        if (ThreadCheck.IsMainThread) {
+            action();
+            return;
+        }
+        if (wait) {
+            Main.RunOnMainThread(action).GetAwaiter().GetResult();
+            return;
+        }
+        Main.RunOnMainThread(action);
+    }
+    /// <summary>
+    /// 若在主线程则直接执行, 否则安排到主线程执行并等待到任务执行结束, 然后获得返回值
+    /// </summary>
+    public static T DoOnMainThread<T>(Func<T> func) {
+        if (ThreadCheck.IsMainThread) {
+            return func();
+        }
+        return Main.RunOnMainThread(func).GetAwaiter().GetResult();
+    }
+    /// <summary>
+    /// 若在主线程则直接执行, 否则等待到主线程执行
+    /// </summary>
+    public static Task DoOnMainThreadAsync(Action action) {
+        if (ThreadCheck.IsMainThread) {
+            action();
+            return Task.CompletedTask;
+        }
+        return Main.RunOnMainThread(action);
+    }
+    /// <summary>
+    /// 若在主线程则直接执行, 否则等待到主线程执行
+    /// </summary>
+    public static Task<T> DoOnMainThreadAsync<T>(Func<T> func) {
+        if (ThreadCheck.IsMainThread) {
+            return Task.FromResult(func());
+        }
+        return Main.RunOnMainThread(func);
+    }
+    #endregion
     /// <summary>
     /// 在游戏时调用, 用以直接保存并退出
     /// </summary>
     public static void SaveAndQuit() {
         // 摘自 Terraria.IngameOptions.Draw 中 Lang.inter[35] ("保存并退出") 相关的部分
-		Terraria.Social.Steam.SteamedWraps.StopPlaytimeTracking();
+		SteamedWraps.StopPlaytimeTracking();
 		SystemLoader.PreSaveAndQuit();
         IngameOptions.Close();
 		Main.menuMode = 10;
@@ -2428,8 +2458,7 @@ public static partial class TigerExtensions {
     public static void SetParent(this UIElement self, UIElement? parent) => self.Parent = parent;
     #endregion
     #region 获取一些属性
-    private static readonly ValueDG<Func<UIScrollbar, bool>> getUIScrollbarIsDraggingDelegate = new(() => GetGetFieldDelegate<UIScrollbar, bool>("_isDragging"));
-    public static bool IsDragging(this UIScrollbar self) => getUIScrollbarIsDraggingDelegate.Value(self);
+    public static bool IsDragging(this UIScrollbar self) => self._isDragging;
     public static List<UIElement> GetElements(this UIElement self) => self.Elements;
     public static StyleDimension GetRight(this UIElement self) => new(self.Left.Pixels + self.Width.Pixels, self.Left.Percent + self.Width.Percent);
     public static StyleDimension GetBottom(this UIElement self) => new(self.Top.Pixels + self.Height.Pixels, self.Top.Percent + self.Height.Percent);
@@ -2584,23 +2613,45 @@ public static partial class TigerExtensions {
     public static Asset<T> ToAsset<T>(this Task<T> self, string assetName, bool immediate = false) where T : class {
         Asset<T> asset = new(assetName);
         if (self.IsCompleted) {
-            Assert(self.IsCompletedSuccessfully, "Task not completed successfully");
+            Debug.Assert(self.IsCompletedSuccessfully, "Task not completed successfully");
             asset.SubmitLoadedContent(self.Result, null);
             return asset;
         }
         if (immediate) {
             self.Wait();
-            Assert(self.IsCompletedSuccessfully, "Task not completed successfully");
+            Debug.Assert(self.IsCompletedSuccessfully, "Task not completed successfully");
             asset.SubmitLoadedContent(self.Result, null);
             return asset;
         }
         asset.SetToLoadingState();
         var task = self.ContinueWith(s => {
-            Assert(s.IsCompletedSuccessfully, "Task not completed successfully");
+            Debug.Assert(s.IsCompletedSuccessfully, "Task not completed successfully");
             asset.SubmitLoadedContent(s.Result, null);
         });
-        asset.Wait = self.Wait;
+        asset.Wait = task.Wait;
         return asset;
+    }
+    /// <summary>
+    /// 让 TML 的自动卸载不会自动卸载它, 返回是否成功
+    /// </summary>
+    public static bool MakeNotAutoUnload(this Hook hook) {
+        var asm = hook.Target.DeclaringType?.Assembly;
+        if (asm == null) {
+            return false;
+        }
+        MonoModHooks.GetDetourList(asm).detours.Remove(hook.DetourInfo);
+        return true;
+    }
+    /// <summary>
+    /// 让 TML 的自动卸载不会自动卸载它, 返回是否成功
+    /// </summary>
+    public static bool MakeNotAutoUnload(this ILHook ilHook) {
+        var asm = ilHook.Manipulator.Method.DeclaringType?.Assembly;
+        if (asm == null) {
+            return false;
+        }
+        MonoModHooks.GetDetourList(asm).ilHooks.Remove(ilHook.HookInfo);
+        return true;
     }
     #endregion
 }
