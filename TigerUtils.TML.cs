@@ -795,6 +795,24 @@ public static partial class TigerClasses {
             public static void ClearCache() => colorsCache.Clear();
         }
     }
+
+    /// <summary>
+    /// 顶点信息
+    /// </summary>
+    /// <param name="position">屏幕位置</param>
+    /// <param name="texCoord">纹理坐标, 三维分别是x, y, 透明度, 都介于 0 - 1 之间</param>
+    /// <param name="color">颜色</param>
+    public struct Vertex(Vector2 position, Vector3 texCoord, Color color) : IVertexType {
+        public readonly VertexDeclaration VertexDeclaration => _vertexDeclaration;
+        private readonly static VertexDeclaration _vertexDeclaration = new([
+            new(0, VertexElementFormat.Vector2, VertexElementUsage.Position, 0),
+            new(8, VertexElementFormat.Color, VertexElementUsage.Color, 0),
+            new(12, VertexElementFormat.Vector3, VertexElementUsage.TextureCoordinate, 0),
+        ]);
+        public Vector2 Position { get; set; } = position;
+        public Color Color { get; set; } = color;
+        public Vector3 TexCoord { get; set; } = texCoord;
+    }
 }
 
 public static partial class TigerExtensions {
@@ -2306,6 +2324,59 @@ public static partial class TigerExtensions {
         spriteBatch.Draw(Textures.Colors.White.Value, center, null, color.Value, rotation, new Vector2(0.5f), new Vector2(width, height), SpriteEffects.None, 0);
     }
     #endregion
+    #region Rebegin
+    public static SpriteBatchRebeginDisposable Rebegin(this SpriteBatch spriteBatch, SpriteSortMode sortMode = SpriteSortMode.Deferred, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Effect? effect = null)
+        => new(spriteBatch, sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, Matrix.identity);
+    public static SpriteBatchRebeginDisposable Rebegin(this SpriteBatch spriteBatch, SpriteSortMode sortMode, BlendState? blendState, SamplerState? samplerState, DepthStencilState? depthStencilState, RasterizerState? rasterizerState, Effect? effect, Matrix transformMatrix)
+        => new(spriteBatch, sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, transformMatrix);
+
+    public static SpriteBatchRebeginDisposable RebeginStill(this SpriteBatch spriteBatch, SpriteSortMode? sortMode = null, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Effect? effect = null, Matrix? transformMatrix = null)
+        => new(spriteBatch, sortMode ?? spriteBatch.sortMode, blendState ?? spriteBatch.blendState, samplerState ?? spriteBatch.samplerState, depthStencilState ?? spriteBatch.depthStencilState, rasterizerState ?? spriteBatch.rasterizerState, effect ?? spriteBatch.customEffect, transformMatrix ?? spriteBatch.transformMatrix);
+    public static SpriteBatchRebeginDisposable RebeginStillWithNullEffect(this SpriteBatch spriteBatch, SpriteSortMode? sortMode = null, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Matrix? transformMatrix = null)
+        => new(spriteBatch, sortMode ?? spriteBatch.sortMode, blendState ?? spriteBatch.blendState, samplerState ?? spriteBatch.samplerState, depthStencilState ?? spriteBatch.depthStencilState, rasterizerState ?? spriteBatch.rasterizerState, null, transformMatrix ?? spriteBatch.transformMatrix);
+    
+
+    public sealed record SpriteBatchRebeginDisposable : IDisposable {
+        private readonly SpriteBatch _spriteBatch;
+        private readonly SpriteSortMode _sortMode;
+        private readonly BlendState _blendState;
+        private readonly SamplerState _samplerState;
+        private readonly DepthStencilState _depthStencilState;
+        private readonly RasterizerState _rasterizerState;
+        private readonly Effect _effect;
+        private readonly Matrix _transformMatrix;
+
+        /// <summary></summary>
+        /// <param name="blendState">默认值 <see cref="BlendState.AlphaBlend"/></param>
+        /// <param name="samplerState">默认值 <see cref="SamplerState.LinearClamp"/></param>
+        /// <param name="depthStencilState">默认值 <see cref="DepthStencilState.None"/></param>
+        /// <param name="rasterizerState">默认值 <see cref="RasterizerState.CullCounterClockwise"/></param>
+        public SpriteBatchRebeginDisposable(SpriteBatch spriteBatch, SpriteSortMode sortMode = SpriteSortMode.Deferred, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Effect? effect = null)
+            : this(spriteBatch, sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, Matrix.identity) { }
+        public SpriteBatchRebeginDisposable(SpriteBatch spriteBatch, SpriteSortMode sortMode, BlendState? blendState, SamplerState? samplerState, DepthStencilState? depthStencilState, RasterizerState? rasterizerState, Effect? effect, Matrix transformMatrix) {
+            _spriteBatch = spriteBatch;
+            _sortMode          = spriteBatch.sortMode         ;
+            _blendState        = spriteBatch.blendState       ;
+            _samplerState      = spriteBatch.samplerState     ;
+            _depthStencilState = spriteBatch.depthStencilState;
+            _rasterizerState   = spriteBatch.rasterizerState  ;
+            _effect            = spriteBatch.customEffect     ;
+            _transformMatrix   = spriteBatch.transformMatrix  ;
+            
+            _spriteBatch.End();
+            _spriteBatch.Begin(sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, transformMatrix);
+        }
+        public void Dispose() {
+            // GC.SuppressFinalize(this);
+            _spriteBatch.End();
+            _spriteBatch.Begin(_sortMode, _blendState, _samplerState, _depthStencilState, _rasterizerState, _effect, _transformMatrix);
+        }
+    }
+    #endregion
+    public static BlendState GetBlendState(this SpriteBatch spriteBatch) => spriteBatch.blendState;
+    public static void SetBlendState(this SpriteBatch spriteBatch, BlendState state) => spriteBatch.blendState = state;
+    public static SamplerState GetSamplerState(this SpriteBatch spriteBatch) => spriteBatch.samplerState;
+    public static void SetSamplerState(this SpriteBatch spriteBatch, SamplerState state) => spriteBatch.samplerState = state;
     #endregion
     #region 解构拓展
     public static void Deconstruct(this CalculatedStyle self, out float x, out float y, out float width, out float height) {
