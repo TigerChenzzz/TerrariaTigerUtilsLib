@@ -1,15 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<PropertyGroup>
-		<AssemblyName>TigerUtilsLib</AssemblyName>
-		<LangVersion>preview</LangVersion>
-		<Nullable>enable</Nullable>
-		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  <PropertyGroup>
+    <AssemblyName>TigerUtilsLib</AssemblyName>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <EnablePathGenerator>false</EnablePathGenerator>
     <EnableModBuilder>false</EnableModBuilder>
     <DebugMod>None</DebugMod>
-	</PropertyGroup>
-	<ItemGroup>
-		<PackageReference Include="Solaestas.tModLoader.ModBuilder" Version="1.6.1" />
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Solaestas.tModLoader.ModBuilder" Version="1.6.1" />
     <Publicize Include="ReLogic" />
-	</ItemGroup>
+  </ItemGroup>
 </Project>

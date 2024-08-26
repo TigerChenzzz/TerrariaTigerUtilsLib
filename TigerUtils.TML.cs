@@ -18,6 +18,7 @@ using Terraria.GameContent;
 using Terraria.GameContent.UI;
 using Terraria.GameContent.UI.Chat;
 using Terraria.GameContent.UI.Elements;
+using Terraria.Graphics.Effects;
 using Terraria.ID;
 using Terraria.Localization;
 using Terraria.ModLoader;
@@ -478,6 +479,103 @@ public static partial class TigerUtils {
         }
         #endregion
     }
+    #endregion
+    #region 绘制
+    #region SwitchRenderTargetTemporarily
+    public static SwitchRenderTargetTemporarilyDisposable SwitchRenderTargetTemporarily(RenderTarget2D target, bool clearOldTarget = false) => new(target, clearOldTarget);
+    public static SwitchRenderTargetTemporarilyDisposable SwitchRenderTargetTemporarily(bool clearOldTarget, params RenderTargetBinding[] targets) => new(clearOldTarget, targets);
+    public static SwitchRenderTargetTemporarilyDisposable SwitchRenderTargetTemporarily(params RenderTargetBinding[] targets) => new(targets);
+    public static SwitchRenderTargetTemporarilyDisposable SwitchRenderTargetTemporarily(RenderTarget2D target, Color clearColor, bool clearOldTarget = false) => new(target, clearColor, clearOldTarget);
+    public static SwitchRenderTargetTemporarilyDisposable SwitchRenderTargetTemporarily(Color clearColor, bool clearOldTarget, params RenderTargetBinding[] targets) => new(clearColor, clearOldTarget, targets);
+    public static SwitchRenderTargetTemporarilyDisposable SwitchRenderTargetTemporarily(Color clearColor, params RenderTargetBinding[] targets) => new(clearColor, targets);
+    public sealed class SwitchRenderTargetTemporarilyDisposable : IDisposable {
+        private readonly RenderTargetBinding[] oldTargets;
+        private bool ClearOldTarget { get; set; }
+        private static bool InResettleRenderTargets { get; set; }
+        static SwitchRenderTargetTemporarilyDisposable() {
+            MonoModHooks.Add(typeof(GraphicsDevice).GetMethod(nameof(GraphicsDevice.Clear), TMLReflection.bfi, [typeof(ClearOptions), typeof(Vector4), typeof(float), typeof(int)]),
+                (Action<GraphicsDevice, ClearOptions, Vector4, float, int> orig, GraphicsDevice self, ClearOptions options, Vector4 color, float depth, int stencil) => {
+                    if (!InResettleRenderTargets) {
+                        orig(self, options, color, depth, stencil);
+                    }
+                });
+        }
+
+        public SwitchRenderTargetTemporarilyDisposable(RenderTarget2D target, bool clearOldTarget = false) {
+            ClearOldTarget = clearOldTarget;
+            var graphicsDevice = Main.instance.GraphicsDevice;
+            oldTargets = graphicsDevice.GetRenderTargets();
+            graphicsDevice.SetRenderTarget(target);
+        }
+        public SwitchRenderTargetTemporarilyDisposable(RenderTarget2D target, Color clearColor, bool clearOldTarget = false) {
+            ClearOldTarget = clearOldTarget;
+            var graphicsDevice = Main.instance.GraphicsDevice;
+            oldTargets = graphicsDevice.GetRenderTargets();
+            graphicsDevice.SetRenderTarget(target);
+            graphicsDevice.Clear(clearColor);
+        }
+        public SwitchRenderTargetTemporarilyDisposable(bool clearOldTarget, params RenderTargetBinding[] targets) {
+            ClearOldTarget = clearOldTarget;
+            var graphicsDevice = Main.instance.GraphicsDevice;
+            oldTargets = graphicsDevice.GetRenderTargets();
+            graphicsDevice.SetRenderTargets(targets);
+        }
+        public SwitchRenderTargetTemporarilyDisposable(Color clearColor, bool clearOldTarget, params RenderTargetBinding[] targets) {
+            ClearOldTarget = clearOldTarget;
+            var graphicsDevice = Main.instance.GraphicsDevice;
+            oldTargets = graphicsDevice.GetRenderTargets();
+            graphicsDevice.SetRenderTargets(targets);
+            graphicsDevice.Clear(clearColor);
+        }
+        public SwitchRenderTargetTemporarilyDisposable(params RenderTargetBinding[] targets) : this(false, targets) { }
+        public SwitchRenderTargetTemporarilyDisposable(Color clearColor, params RenderTargetBinding[] targets) : this(clearColor, false, targets) { }
+        public void Dispose() {
+            var graphicsDevice = Main.instance.GraphicsDevice;
+            InResettleRenderTargets = !ClearOldTarget;
+            graphicsDevice.SetRenderTargets(oldTargets);
+            InResettleRenderTargets = false;
+
+            /*
+            // 不用钩子的写法, 但是不能处理 oldTargets[0] 不是 RenderTarget2D 的情况 (oldTargets[0] 一定是 IRenderTarget, 但 IRenderTarget 的 RenderTargetUsage 是只读的)
+            var graphicsDevice = Main.instance.GraphicsDevice;
+            RenderTargetUsage oldUsage;
+            if (oldTargets.Length == 0) {
+                oldUsage = graphicsDevice.PresentationParameters.RenderTargetUsage;
+                graphicsDevice.PresentationParameters.RenderTargetUsage = RenderTargetUsage.PreserveContents;
+                graphicsDevice.SetRenderTargets(null);
+                graphicsDevice.PresentationParameters.RenderTargetUsage = oldUsage;
+                return;
+            }
+            if (oldTargets[0].RenderTarget is not RenderTarget2D oldTarget) {
+                graphicsDevice.SetRenderTargets(oldTargets);
+                return;
+            }
+            oldUsage = oldTarget.RenderTargetUsage;
+            oldTarget.RenderTargetUsage = RenderTargetUsage.PreserveContents;
+            graphicsDevice.SetRenderTargets(oldTargets);
+            oldTarget.RenderTargetUsage = oldUsage;
+            */
+        }
+    }
+    #endregion
+    #region SetFilterActivity
+    public static void SetFilterActivity(string filterName, bool activity) {
+        var filter = Filters.Scene[filterName];
+        if (activity) {
+            if (!filter.IsActive()) {
+                Filters.Scene.Activate(filterName);
+            }
+        }
+        else {
+            if (filter.IsActive()) {
+                Filters.Scene.Deactivate(filterName);
+                if (Filters.Scene._activeFilters.Remove(filter)) {
+                    Filters.Scene._activeFilterCount -= 1;
+                }
+            }
+        }
+    }
+    #endregion
     #endregion
     #region 杂项
 
@@ -1784,6 +1882,15 @@ public static partial class TigerExtensions {
         return new Rect(tileX * 16, tileY * 16, 16, 16);
     }
     #endregion
+    #region 解构拓展
+    public static void Deconstruct(this CalculatedStyle self, out float x, out float y, out float width, out float height) {
+        x = self.X;
+        y = self.Y;
+        width = self.Width;
+        height = self.Height;
+    }
+    #endregion
+    #region 绘制相关
     #region SpriteBatch 拓展
     #region Draw9Piece
     /// <summary>
@@ -2324,19 +2431,19 @@ public static partial class TigerExtensions {
         spriteBatch.Draw(Textures.Colors.White.Value, center, null, color.Value, rotation, new Vector2(0.5f), new Vector2(width, height), SpriteEffects.None, 0);
     }
     #endregion
-    #region Rebegin
-    public static SpriteBatchRebeginDisposable Rebegin(this SpriteBatch spriteBatch, SpriteSortMode sortMode = SpriteSortMode.Deferred, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Effect? effect = null)
+    #region RebeginTemporarily, EndTemporarily
+    public static SpriteBatchRebeginTemporarilyDisposable RebeginTemporarily(this SpriteBatch spriteBatch, SpriteSortMode sortMode = SpriteSortMode.Deferred, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Effect? effect = null)
         => new(spriteBatch, sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, Matrix.identity);
-    public static SpriteBatchRebeginDisposable Rebegin(this SpriteBatch spriteBatch, SpriteSortMode sortMode, BlendState? blendState, SamplerState? samplerState, DepthStencilState? depthStencilState, RasterizerState? rasterizerState, Effect? effect, Matrix transformMatrix)
+    public static SpriteBatchRebeginTemporarilyDisposable RebeginTemporarily(this SpriteBatch spriteBatch, SpriteSortMode sortMode, BlendState? blendState, SamplerState? samplerState, DepthStencilState? depthStencilState, RasterizerState? rasterizerState, Effect? effect, Matrix transformMatrix)
         => new(spriteBatch, sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, transformMatrix);
 
-    public static SpriteBatchRebeginDisposable RebeginStill(this SpriteBatch spriteBatch, SpriteSortMode? sortMode = null, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Effect? effect = null, Matrix? transformMatrix = null)
+    public static SpriteBatchRebeginTemporarilyDisposable RebeginTemporarilyStill(this SpriteBatch spriteBatch, SpriteSortMode? sortMode = null, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Effect? effect = null, Matrix? transformMatrix = null)
         => new(spriteBatch, sortMode ?? spriteBatch.sortMode, blendState ?? spriteBatch.blendState, samplerState ?? spriteBatch.samplerState, depthStencilState ?? spriteBatch.depthStencilState, rasterizerState ?? spriteBatch.rasterizerState, effect ?? spriteBatch.customEffect, transformMatrix ?? spriteBatch.transformMatrix);
-    public static SpriteBatchRebeginDisposable RebeginStillWithNullEffect(this SpriteBatch spriteBatch, SpriteSortMode? sortMode = null, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Matrix? transformMatrix = null)
+    public static SpriteBatchRebeginTemporarilyDisposable RebeginTemporarilyStillWithNullEffect(this SpriteBatch spriteBatch, SpriteSortMode? sortMode = null, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Matrix? transformMatrix = null)
         => new(spriteBatch, sortMode ?? spriteBatch.sortMode, blendState ?? spriteBatch.blendState, samplerState ?? spriteBatch.samplerState, depthStencilState ?? spriteBatch.depthStencilState, rasterizerState ?? spriteBatch.rasterizerState, null, transformMatrix ?? spriteBatch.transformMatrix);
     
 
-    public sealed record SpriteBatchRebeginDisposable : IDisposable {
+    public sealed record SpriteBatchRebeginTemporarilyDisposable : IDisposable {
         private readonly SpriteBatch _spriteBatch;
         private readonly SpriteSortMode _sortMode;
         private readonly BlendState _blendState;
@@ -2351,9 +2458,9 @@ public static partial class TigerExtensions {
         /// <param name="samplerState">默认值 <see cref="SamplerState.LinearClamp"/></param>
         /// <param name="depthStencilState">默认值 <see cref="DepthStencilState.None"/></param>
         /// <param name="rasterizerState">默认值 <see cref="RasterizerState.CullCounterClockwise"/></param>
-        public SpriteBatchRebeginDisposable(SpriteBatch spriteBatch, SpriteSortMode sortMode = SpriteSortMode.Deferred, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Effect? effect = null)
+        public SpriteBatchRebeginTemporarilyDisposable(SpriteBatch spriteBatch, SpriteSortMode sortMode = SpriteSortMode.Deferred, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Effect? effect = null)
             : this(spriteBatch, sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, Matrix.identity) { }
-        public SpriteBatchRebeginDisposable(SpriteBatch spriteBatch, SpriteSortMode sortMode, BlendState? blendState, SamplerState? samplerState, DepthStencilState? depthStencilState, RasterizerState? rasterizerState, Effect? effect, Matrix transformMatrix) {
+        public SpriteBatchRebeginTemporarilyDisposable(SpriteBatch spriteBatch, SpriteSortMode sortMode, BlendState? blendState, SamplerState? samplerState, DepthStencilState? depthStencilState, RasterizerState? rasterizerState, Effect? effect, Matrix transformMatrix) {
             _spriteBatch = spriteBatch;
             _sortMode          = spriteBatch.sortMode         ;
             _blendState        = spriteBatch.blendState       ;
@@ -2372,18 +2479,45 @@ public static partial class TigerExtensions {
             _spriteBatch.Begin(_sortMode, _blendState, _samplerState, _depthStencilState, _rasterizerState, _effect, _transformMatrix);
         }
     }
+
+    public static SpriteBatchEndTemporarilyDisposable EndTemporarily(this SpriteBatch spriteBatch) => new(spriteBatch);
+    public sealed record SpriteBatchEndTemporarilyDisposable : IDisposable {
+        private readonly SpriteBatch _spriteBatch;
+        private readonly SpriteSortMode _sortMode;
+        private readonly BlendState _blendState;
+        private readonly SamplerState _samplerState;
+        private readonly DepthStencilState _depthStencilState;
+        private readonly RasterizerState _rasterizerState;
+        private readonly Effect _effect;
+        private readonly Matrix _transformMatrix;
+        public SpriteBatchEndTemporarilyDisposable(SpriteBatch spriteBatch) {
+            _spriteBatch = spriteBatch;
+            _sortMode          = spriteBatch.sortMode         ;
+            _blendState        = spriteBatch.blendState       ;
+            _samplerState      = spriteBatch.samplerState     ;
+            _depthStencilState = spriteBatch.depthStencilState;
+            _rasterizerState   = spriteBatch.rasterizerState  ;
+            _effect            = spriteBatch.customEffect     ;
+            _transformMatrix   = spriteBatch.transformMatrix  ;
+            
+            _spriteBatch.End();
+        }
+        public void Dispose() {
+            // GC.SuppressFinalize(this);
+            _spriteBatch.Begin(_sortMode, _blendState, _samplerState, _depthStencilState, _rasterizerState, _effect, _transformMatrix);
+        }
+    }
     #endregion
     public static BlendState GetBlendState(this SpriteBatch spriteBatch) => spriteBatch.blendState;
     public static void SetBlendState(this SpriteBatch spriteBatch, BlendState state) => spriteBatch.blendState = state;
     public static SamplerState GetSamplerState(this SpriteBatch spriteBatch) => spriteBatch.samplerState;
     public static void SetSamplerState(this SpriteBatch spriteBatch, SamplerState state) => spriteBatch.samplerState = state;
+    public static bool BeginCalled(this SpriteBatch spriteBatch) => spriteBatch.beginCalled;
     #endregion
-    #region 解构拓展
-    public static void Deconstruct(this CalculatedStyle self, out float x, out float y, out float width, out float height) {
-        x = self.X;
-        y = self.Y;
-        width = self.Width;
-        height = self.Height;
+    #region Texture2D 拓展
+    public static void SaveAsPng(this Texture2D self, string path) {
+        using var file = File.Open(path, FileMode.Create);
+        self.SaveAsPng(file, self.Width, self.Height);
     }
     #endregion
     #region UI
@@ -2679,6 +2813,7 @@ public static partial class TigerExtensions {
     }
     #endregion
 
+    #endregion
     #endregion
     #region 杂项
     public static Asset<T> ToAsset<T>(this Task<T> self, string assetName, bool immediate = false) where T : class {
