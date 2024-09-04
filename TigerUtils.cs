@@ -5117,7 +5117,7 @@ public static partial class TigerExtensions {
     }
     #endregion
     #region 杂项
-    public static void Reverse<T>(this IList<T> list) {
+    public static void ReverseSelf<T>(this IList<T> list) {
         int m = list.Count / 2;
         for (int i = 0; i < m; ++i) {
             (list[i], list[list.Count - i - 1]) = (list[list.Count - i - 1], list[i]);

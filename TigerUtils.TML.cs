@@ -586,6 +586,7 @@ public static partial class TigerUtils {
     public static bool IsTMLInDeveloperMode => ModCompile.DeveloperMode;
     #endregion
     public static T TMLInstance<T>() where T : class => ContentInstance<T>.Instance;
+    #region TextureFromColors
     public static Texture2D TextureFromColors(int width, int height, Color[] colors) {
         return DoOnMainThread(() => TextureFromColorsInner(width, height, colors));
     }
@@ -600,6 +601,7 @@ public static partial class TigerUtils {
     public static Asset<Texture2D> AssetTextureFromColors(int width, int height, Color[] colors, bool immediate = false) {
         return TextureFromColorsAsync(width, height, colors).ToAsset("TextureFromColors", immediate);
     }
+    #endregion
     #region DoOnMainThread
     /// <summary>
     /// 若在主线程则直接执行, 否则安排到主线程执行
@@ -657,6 +659,19 @@ public static partial class TigerUtils {
 		Main.gameMenu = true;
 		WorldGen.SaveAndQuit();
     }
+    #region Main.SetMouseWorld
+    public static void Main_SetMouseWorld(Vector2 mouseWorld) {
+        Main.mouseX = (int)(mouseWorld.X - Main.screenPosition.X);
+        Main.mouseY = (int)(mouseWorld.Y - Main.screenPosition.Y);
+    }
+    public static void Main_SetMouseWorldX(float mouseWorldX) {
+        Main.mouseX = (int)(mouseWorldX - Main.screenPosition.X);
+    }
+    public static void Main_SetMouseWorldY(float mouseWorldY) {
+        Main.mouseY = (int)(mouseWorldY - Main.screenPosition.Y);
+    }
+    #endregion
+
     #endregion
 }
 
