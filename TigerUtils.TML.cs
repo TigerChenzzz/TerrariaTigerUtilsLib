@@ -488,10 +488,7 @@ public static partial class TigerUtils {
     public static SwitchRenderTargetTemporarilyDisposable SwitchRenderTargetTemporarily(RenderTarget2D target, Color clearColor, bool clearOldTarget = false) => new(target, clearColor, clearOldTarget);
     public static SwitchRenderTargetTemporarilyDisposable SwitchRenderTargetTemporarily(Color clearColor, bool clearOldTarget, params RenderTargetBinding[] targets) => new(clearColor, clearOldTarget, targets);
     public static SwitchRenderTargetTemporarilyDisposable SwitchRenderTargetTemporarily(Color clearColor, params RenderTargetBinding[] targets) => new(clearColor, targets);
-    public sealed class SwitchRenderTargetTemporarilyDisposable : IDisposable {
-        private readonly RenderTargetBinding[] oldTargets;
-        private bool ClearOldTarget { get; set; }
-        private static bool InResettleRenderTargets { get; set; }
+    public readonly record struct SwitchRenderTargetTemporarilyDisposable(RenderTargetBinding[] OldTargets, bool ClearOldTarget) : IDisposable {
         static SwitchRenderTargetTemporarilyDisposable() {
             MonoModHooks.Add(typeof(GraphicsDevice).GetMethod(nameof(GraphicsDevice.Clear), TMLReflection.bfi, [typeof(ClearOptions), typeof(Vector4), typeof(float), typeof(int)]),
                 (Action<GraphicsDevice, ClearOptions, Vector4, float, int> orig, GraphicsDevice self, ClearOptions options, Vector4 color, float depth, int stencil) => {
@@ -500,30 +497,23 @@ public static partial class TigerUtils {
                     }
                 });
         }
+        private static bool InResettleRenderTargets { get; set; }
 
-        public SwitchRenderTargetTemporarilyDisposable(RenderTarget2D target, bool clearOldTarget = false) {
-            ClearOldTarget = clearOldTarget;
+        public SwitchRenderTargetTemporarilyDisposable(RenderTarget2D target, bool clearOldTarget = false) : this(Main.instance.GraphicsDevice.GetRenderTargets(), clearOldTarget) {
             var graphicsDevice = Main.instance.GraphicsDevice;
-            oldTargets = graphicsDevice.GetRenderTargets();
             graphicsDevice.SetRenderTarget(target);
         }
-        public SwitchRenderTargetTemporarilyDisposable(RenderTarget2D target, Color clearColor, bool clearOldTarget = false) {
-            ClearOldTarget = clearOldTarget;
+        public SwitchRenderTargetTemporarilyDisposable(RenderTarget2D target, Color clearColor, bool clearOldTarget = false) : this(Main.instance.GraphicsDevice.GetRenderTargets(), clearOldTarget) {
             var graphicsDevice = Main.instance.GraphicsDevice;
-            oldTargets = graphicsDevice.GetRenderTargets();
             graphicsDevice.SetRenderTarget(target);
             graphicsDevice.Clear(clearColor);
         }
-        public SwitchRenderTargetTemporarilyDisposable(bool clearOldTarget, params RenderTargetBinding[] targets) {
-            ClearOldTarget = clearOldTarget;
+        public SwitchRenderTargetTemporarilyDisposable(bool clearOldTarget, params RenderTargetBinding[] targets) : this(Main.instance.GraphicsDevice.GetRenderTargets(), clearOldTarget) {
             var graphicsDevice = Main.instance.GraphicsDevice;
-            oldTargets = graphicsDevice.GetRenderTargets();
             graphicsDevice.SetRenderTargets(targets);
         }
-        public SwitchRenderTargetTemporarilyDisposable(Color clearColor, bool clearOldTarget, params RenderTargetBinding[] targets) {
-            ClearOldTarget = clearOldTarget;
+        public SwitchRenderTargetTemporarilyDisposable(Color clearColor, bool clearOldTarget, params RenderTargetBinding[] targets) : this(Main.instance.GraphicsDevice.GetRenderTargets(), clearOldTarget) {
             var graphicsDevice = Main.instance.GraphicsDevice;
-            oldTargets = graphicsDevice.GetRenderTargets();
             graphicsDevice.SetRenderTargets(targets);
             graphicsDevice.Clear(clearColor);
         }
@@ -532,7 +522,7 @@ public static partial class TigerUtils {
         public void Dispose() {
             var graphicsDevice = Main.instance.GraphicsDevice;
             InResettleRenderTargets = !ClearOldTarget;
-            graphicsDevice.SetRenderTargets(oldTargets);
+            graphicsDevice.SetRenderTargets(OldTargets);
             InResettleRenderTargets = false;
 
             /*
@@ -2458,7 +2448,7 @@ public static partial class TigerExtensions {
         => new(spriteBatch, sortMode ?? spriteBatch.sortMode, blendState ?? spriteBatch.blendState, samplerState ?? spriteBatch.samplerState, depthStencilState ?? spriteBatch.depthStencilState, rasterizerState ?? spriteBatch.rasterizerState, null, transformMatrix ?? spriteBatch.transformMatrix);
     
 
-    public sealed record SpriteBatchRebeginTemporarilyDisposable : IDisposable {
+    public readonly record struct SpriteBatchRebeginTemporarilyDisposable : IDisposable {
         private readonly SpriteBatch _spriteBatch;
         private readonly SpriteSortMode _sortMode;
         private readonly BlendState _blendState;
@@ -2496,7 +2486,7 @@ public static partial class TigerExtensions {
     }
 
     public static SpriteBatchEndTemporarilyDisposable EndTemporarily(this SpriteBatch spriteBatch) => new(spriteBatch);
-    public sealed record SpriteBatchEndTemporarilyDisposable : IDisposable {
+    public readonly record struct SpriteBatchEndTemporarilyDisposable : IDisposable {
         private readonly SpriteBatch _spriteBatch;
         private readonly SpriteSortMode _sortMode;
         private readonly BlendState _blendState;
@@ -2523,10 +2513,16 @@ public static partial class TigerExtensions {
         }
     }
     #endregion
+
     public static BlendState GetBlendState(this SpriteBatch spriteBatch) => spriteBatch.blendState;
     public static void SetBlendState(this SpriteBatch spriteBatch, BlendState state) => spriteBatch.blendState = state;
+
     public static SamplerState GetSamplerState(this SpriteBatch spriteBatch) => spriteBatch.samplerState;
     public static void SetSamplerState(this SpriteBatch spriteBatch, SamplerState state) => spriteBatch.samplerState = state;
+
+    public static SpriteSortMode GetSortMode(this SpriteBatch spriteBatch) => spriteBatch.sortMode;
+    public static void SetSortMode(this SpriteBatch spriteBatch, SpriteSortMode sortMode) => spriteBatch.sortMode = sortMode;
+
     public static bool BeginCalled(this SpriteBatch spriteBatch) => spriteBatch.beginCalled;
     #endregion
     #region Texture2D 拓展
