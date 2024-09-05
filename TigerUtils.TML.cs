@@ -2523,7 +2523,11 @@ public static partial class TigerExtensions {
     public static SpriteSortMode GetSortMode(this SpriteBatch spriteBatch) => spriteBatch.sortMode;
     public static void SetSortMode(this SpriteBatch spriteBatch, SpriteSortMode sortMode) => spriteBatch.sortMode = sortMode;
 
+    public static Effect? GetCusomEffect(this SpriteBatch spriteBatch) => spriteBatch.customEffect;
+    public static void SetCusomEffect(this SpriteBatch spriteBatch, Effect? effect) => spriteBatch.customEffect = effect;
+
     public static bool BeginCalled(this SpriteBatch spriteBatch) => spriteBatch.beginCalled;
+    public static void SetBeginCalled(this SpriteBatch spriteBatch, bool beginCalled) => spriteBatch.beginCalled = beginCalled;
     #endregion
     #region Texture2D 拓展
     public static void SaveAsPng(this Texture2D self, string path) {

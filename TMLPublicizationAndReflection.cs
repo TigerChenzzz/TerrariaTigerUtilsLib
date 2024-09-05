@@ -55,6 +55,8 @@ public static partial class TigerUtils {
             /// 将它设置为 <see cref="TMLSamplerState.PointClamp"/> 可以让像素不再模糊
             /// </summary>
             public static void SetSamplerState(TMLSpriteBatch spriteBatch, TMLSamplerState state) => spriteBatch.samplerState = state;
+            public static unsafe void FlushBatch(TMLSpriteBatch spriteBatch) => spriteBatch.FlushBatch();
+            public static void PrepRenderState(TMLSpriteBatch spriteBatch) => spriteBatch.PrepRenderState();
         }
         public static class UIModConfig {
             public static string Tooltip {
