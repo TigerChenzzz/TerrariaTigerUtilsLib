@@ -12,6 +12,7 @@ using TMLLogging = Terraria.ModLoader.Logging;
 using TMLMain = Terraria.Main;
 using TMLMod = Terraria.ModLoader.Mod;
 using TMLModConfig = Terraria.ModLoader.Config.ModConfig;
+using TMLModLoader = Terraria.ModLoader.ModLoader;
 using TMLMonoModHooks = Terraria.ModLoader.MonoModHooks;
 using TMLPlayer = Terraria.Player;
 using TMLProjectileLoader = Terraria.ModLoader.ProjectileLoader;
@@ -30,6 +31,9 @@ public static partial class TigerUtils {
         public static class Logging {
             public static ILog TML => TMLLogging.tML;
             public static ILog Terraria => TMLLogging.Terraria;
+        }
+        public static class ModLoader {
+            public static bool IsLoading => TMLModLoader.isLoading;
         }
         public static class MonoModHooks {
             public static string StringRep(MethodBase m) => TMLMonoModHooks.StringRep(m);

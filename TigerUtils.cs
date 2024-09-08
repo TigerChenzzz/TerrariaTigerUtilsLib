@@ -2417,6 +2417,8 @@ public static partial class TigerUtils {
     public static bool LesserEqualN1(int a, int b) => b == -1 || a != -1 && a <= b;
     public static int MaxN1(int a, int b) => a == -1 || b == -1 ? -1 : a >= b ? a : b;
     public static int MinN1(int a, int b) => a == -1 ? b : b == -1 ? a : a <= b ? a : b;
+    public static int MaxU(int a, int b) => ((uint)a >= (uint)b) ? a : b;
+    public static int MinU(int a, int b) => ((uint)a <= (uint)b) ? a : b;
     #endregion
     #region 一些简单的委托
     public static Func<T, bool> Lesser<T>(T value) where T : IComparable<T>
