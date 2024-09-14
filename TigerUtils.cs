@@ -1,7 +1,7 @@
 ﻿// #define TIGER_REFLECTION_EXTENSIONS
 
-global using static TigerUtilsLib.TigerUtils;
 global using static TigerUtilsLib.TigerClasses;
+global using static TigerUtilsLib.TigerUtils;
 using Microsoft.Xna.Framework;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -4944,6 +4944,22 @@ public static partial class TigerExtensions {
             dictionary.Add(key, elementList);
         }
     }
+    public static void AddElementRange<TKey, TElement>(this IDictionary<TKey, List<TElement>> dictionary, TKey key, IEnumerable<TElement> elements) where TKey : notnull {
+        if (dictionary.TryGetValue(key, out List<TElement>? value)) {
+            value.AddRange(elements);
+        }
+        else {
+            dictionary.Add(key, [.. elements]);
+        }
+    }
+    public static void AddElementRange<TKey, TElement>(this IDictionary<TKey, List<TElement>> dictionary, TKey key, List<TElement> elementList) where TKey : notnull {
+        if (dictionary.TryGetValue(key, out List<TElement>? value)) {
+            value.AddRange(elementList);
+        }
+        else {
+            dictionary.Add(key, elementList);
+        }
+    }
     
     public static void AddElement<TKey, TList, TElement>(this IDictionary<TKey, TList> dictionary, TKey key, TElement element) where TKey : notnull where TList : IList<TElement>, new() {
         if (dictionary.TryGetValue(key, out TList? value)) {
@@ -4967,6 +4983,63 @@ public static partial class TigerExtensions {
         }
         else {
             dictionary.Add(key, elementList);
+        }
+    }
+    public static void AddElementRange<TKey, TList, TElement>(this IDictionary<TKey, TList> dictionary, TKey key, IEnumerable<TElement> elements) where TKey : notnull where TList : IList<TElement>, new() {
+        if (dictionary.TryGetValue(key, out TList? value)) {
+            value.AddRange(elements);
+        }
+        else {
+            dictionary.Add(key, [.. elements]);
+        }
+    }
+    public static void AddElementRange<TKey, TList, TElement>(this IDictionary<TKey, TList> dictionary, TKey key, TList elementList) where TKey : notnull where TList : IList<TElement>, new() {
+        if (dictionary.TryGetValue(key, out TList? value)) {
+            value.AddRange(elementList);
+        }
+        else {
+            dictionary.Add(key, elementList);
+        }
+    }
+    
+    public static void AddItem<TKey, TCollection, TItem>(this IDictionary<TKey, TCollection> dictionary, TKey key, TItem item) where TKey : notnull where TCollection : ICollection<TItem>, new() {
+        if (dictionary.TryGetValue(key, out TCollection? value)) {
+            value.Add(item);
+        }
+        else {
+            dictionary.Add(key, [item]);
+        }
+    }
+    public static void AddItemRange<TKey, TCollection, TItem>(this Dictionary<TKey, TCollection> dictionary, TKey key, IEnumerable<TItem> items) where TKey : notnull where TCollection : ICollection<TItem>, new() {
+        if (dictionary.TryGetValue(key, out TCollection? value)) {
+            value.AddRange(items);
+        }
+        else {
+            dictionary.Add(key, [.. items]);
+        }
+    }
+    public static void AddItemRange<TKey, TCollection, TItem>(this Dictionary<TKey, TCollection> dictionary, TKey key, TCollection itemCollection) where TKey : notnull where TCollection : ICollection<TItem>, new() {
+        if (dictionary.TryGetValue(key, out TCollection? value)) {
+            value.AddRange(itemCollection);
+        }
+        else {
+            dictionary.Add(key, itemCollection);
+        }
+    }
+    public static void AddItemRange<TKey, TCollection, TItem>(this IDictionary<TKey, TCollection> dictionary, TKey key, IEnumerable<TItem> items) where TKey : notnull where TCollection : ICollection<TItem>, new() {
+        if (dictionary.TryGetValue(key, out TCollection? value)) {
+            value.AddRange(items);
+        }
+        else {
+            dictionary.Add(key, [.. items]);
+        }
+    }
+    public static void AddItemRange<TKey, TCollection, TItem>(this IDictionary<TKey, TCollection> dictionary, TKey key, TCollection itemCollection) where TKey : notnull where TCollection : ICollection<TItem>, new() {
+        if (dictionary.TryGetValue(key, out TCollection? value)) {
+            value.AddRange(itemCollection);
+        }
+        else {
+            dictionary.Add(key, itemCollection);
         }
     }
     #endregion
