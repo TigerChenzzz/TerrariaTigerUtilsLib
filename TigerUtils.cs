@@ -2851,6 +2851,15 @@ public static partial class TigerUtils {
     }
     #endregion
     #endregion
+    #region Clone
+    private static Lazy<Func<object, object>> memberwiseCloneFunc = new(() => GetMethodDelegate<object, Func<object, object>>("MemberwiseClone"));
+    public static T ShallowClone<T>(T obj) where T : notnull {
+        if (obj is ICloneable cloneable) {
+            return (T)cloneable.Clone();
+        }
+        return (T)memberwiseCloneFunc.Value(obj);
+    }
+    #endregion
     #region 杂项
     public static void Swap<T>(ref T left, ref T right) => (left, right) = (right, left);
     /// <summary>
