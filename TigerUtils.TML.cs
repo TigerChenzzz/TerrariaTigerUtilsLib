@@ -5,6 +5,7 @@ using ReLogic.Content;
 using ReLogic.Graphics;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -14,6 +15,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent;
@@ -724,158 +726,31 @@ public static partial class TigerUtils {
         }
         #endregion
 
+        #region GetStringSize
         public static Vector2 GetStringSize(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale = 1, float maxWidth = -1f) {
             #region 局部变量初始化
             Vector2 position = Vector2.Zero;
             Vector2 positionNow = Vector2.Zero;
             Vector2 result = Vector2.Zero;
-            TextSnippet snippet;
-            float scale;
+            TextSnippet snippet = null!;
+            float scale = 1;
             float maxLineHeight = 0;
-            bool justNewLine = false;
+            bool justNewLine = true;
+            int i = 0;
             #endregion
-            void NewLine() {
-                if (justNewLine) {
-                    maxLineHeight.ClampMinTo(font.LineSpacing);
-                }
-                positionNow.Y += maxLineHeight;
-                result.X.ClampMinTo(positionNow.X);
-                maxLineHeight = 0;
-                positionNow.X = position.X;
-                justNewLine = true;
-            }
-            Vector2 MeasureString(string str) {
-                return font.MeasureString(str) * scale;
-            }
-            void DrawString(string str) {
-                var size = MeasureString(str);
-                DrawString2(str, size);
-            }
-            void DrawString2(string str, Vector2 size) {
-                if (str.Length == 0) {
-                    return;
-                }
-                justNewLine = false;
-                positionNow.X += size.X;
-                Debug.Assert(size.Y >= font.LineSpacing);
-                maxLineHeight.ClampMinTo(size.Y);
-            }
-            void UniqueDraw(Vector2 size) {
-                justNewLine = false;
-                positionNow.X += size.X;
-                maxLineHeight.ClampMinTo(size.Y);
-            }
-            foreach (var snip in snippets) {
-                snippet = snip;
-                snippet.Update();
-                scale = snippet.Scale * baseScale;
-                #region 处理有独特绘制的 Snippet (UniqueDraw)
-                if (snippet.UniqueDraw(true, out var size, null, scale: scale)) {
-                    if (maxWidth >= 0 && positionNow.X != 0 && positionNow.X + size.X > maxWidth) {
-                        NewLine();
-                    }
-                    UniqueDraw(size);
-                    continue;
-                }
-                #endregion
-
-                string[] lines = snippet.Text.Split('\n');
-                #region 不限宽的处理
-                if (maxWidth < 0) {
-                    DrawString(lines[0]);
-                    for (int j = 1; j < lines.Length; ++j) {
-                        NewLine();
-                        var line = lines[j];
-                        DrawString(lines[j]);
-                    }
-                    continue;
-                }
-                #endregion
-                #region 限宽的处理
-                for (int j = 0; j < lines.Length; ++j) {
-                    if (j != 0) {
-                        NewLine();
-                    }
-                    var line = lines[j];
-                    StringBuilder wordBuilder = new();
-                    string? word = null;
-                    Vector2 wordSize = Vector2.Zero;
-                    for (int k = 0; k < line.Length; ++k) {
-                        char c = line[k];
-                        // 如果此字符属于一个单词...
-                        if ('A' <= c && c <= 'Z' || 'a' <= c && c <= 'z' || c == '_') {
-                            wordBuilder.Append(c);
-                            var lastWord = word;
-                            word = wordBuilder.ToString();
-                            wordSize = MeasureString(word);
-
-                        CheckOverWidth:
-                            // 如果超限...
-                            if (positionNow.X + wordSize.X >= position.X + maxWidth) {
-                                // 如果不处于开头, 则先换行, 再检查是否超限
-                                if (positionNow.X != position.X) {
-                                    NewLine();
-                                    goto CheckOverWidth;
-                                }
-                                // 如果此单词只有这个字母, 则画出它, 并清空单词
-                                if (lastWord == null) {
-                                    DrawString2(word, wordSize);
-                                    wordBuilder.Clear();
-                                    word = null;
-                                }
-                                // 否则画出没有这个字母的单词, 并换行, 清空单词, 放入这个字母
-                                else {
-                                    DrawString(lastWord);
-                                    NewLine();
-                                    wordBuilder.Clear();
-                                    wordBuilder.Append(c);
-                                    word = null;
-                                }
-                            }
-                            continue;
-                        }
-                        // 否则...
-                        // 若有单词则先画出单词
-                        if (word != null) {
-                            DrawString2(word, wordSize);
-                            word = null;
-                            wordBuilder.Clear();
-                        }
-                        #region 画出字母
-                        string s = new([c]);
-                        var charSize = MeasureString(s);
-                        // 若没有超限, 则直接画出并返回
-                        if (positionNow.X + charSize.X <= position.X + maxWidth) {
-                            DrawString2(s, charSize);
-                            continue;
-                        }
-                        // 若不处于开头, 则先换行
-                        if (positionNow.X != position.X) {
-                            NewLine();
-                        }
-                        // 直接画出
-                        DrawString2(s, charSize);
-                        #endregion
-                    }
-                    // 如果有残存单词则画出它
-                    if (word != null) {
-                        DrawString2(word, wordSize);
-                    }
-                }
-                #endregion
-            }
-            #region 结尾处理
-            result.X.ClampMinTo(positionNow.X);
-            if (justNewLine) {
-                maxLineHeight.ClampMinTo(font.LineSpacing);
-            }
-            result.Y.ClampMinTo(positionNow.Y + maxLineHeight);
-            result -= position;
+            void NewLine(bool unique) { }
+            void DrawString(string str, Vector2 size) { }
+            void UniqueDraw(TextSnippet ts, Vector2 size) { }
+            void AfterUpdateSnippet(TextSnippet ts) { }
+            void PostHandleNonUniqueSnippet(TextSnippet ts) { }
+            void FinalProcess() { }
+            HandleSnippets(font, snippets, Vector2.Zero, baseScale, maxWidth,
+                ref positionNow, ref result, ref scale, ref maxLineHeight, ref justNewLine, ref snippet, ref i,
+                NewLine, DrawString, UniqueDraw, AfterUpdateSnippet, PostHandleNonUniqueSnippet, FinalProcess);
             return result;
-            #endregion
         }
-
-        // !!! 同时修改 GetStringSize 和 CreateWrappedText
+        #endregion
+        #region DrawString
         /// <summary>
         /// <br/>优化:
         /// <br/>换成 IEnumerable &lt;TextSnippet>
@@ -892,165 +767,36 @@ public static partial class TigerUtils {
             Vector2 positionNow = position;
             Vector2 result = positionNow;
             Color color = baseColor;
-            TextSnippet snippet;
-            float scale;
+            TextSnippet snippet = null!;
+            float scale = 1;
             float maxLineHeight = 0;
-            bool justNewLine = false;
+            bool justNewLine = true;
             int i = -1;
             #endregion
-            void NewLine() {
-                if (justNewLine) {
-                    maxLineHeight.ClampMinTo(font.LineSpacing);
-                }
-                positionNow.Y += maxLineHeight;
-                result.X.ClampMinTo(positionNow.X);
-                maxLineHeight = 0;
-                positionNow.X = position.X;
-                justNewLine = true;
-            }
-            Vector2 MeasureString(string str) {
-                return font.MeasureString(str) * scale;
-            }
-            void DrawString(string str) {
-                var size = MeasureString(str);
-                DrawString2(str, size);
-            }
-            void DrawString2(string str, Vector2 size) {
-                if (str.Length == 0) {
-                    return;
-                }
-                justNewLine = false;
+            void NewLine(bool unique) { }
+            void DrawString(string str, Vector2 size) {
                 // Terraria 原版原本这里是莫名其妙的 snippet.Scale ^ 2, 这里还是把它修了吧
                 // spriteBatch.DrawString(font, str, positionNow, color, rotation, origin, baseScale * snippet.Scale * snippetScale, SpriteEffects.None, 0f);
                 spriteBatch.DrawString(font, str, positionNow, color, rotation, origin, scale, SpriteEffects.None, 0);
-                positionNow.X += size.X;
-                Debug.Assert(size.Y >= font.LineSpacing);
-                maxLineHeight.ClampMinTo(size.Y);
             }
-            void UniqueDraw(Vector2 size) {
-                justNewLine = false;
-                snippet.UniqueDraw(false, out _, spriteBatch, positionNow, color, scale);
+            void UniqueDraw(TextSnippet ts, Vector2 size) {
+                ts.UniqueDraw(false, out _, spriteBatch, positionNow, color, scale);
                 if (mousePosition.Between(positionNow, positionNow + size))
                     hovered = i;
-                positionNow.X += size.X;
-                maxLineHeight.ClampMinTo(size.Y);
             }
-            foreach (var snip in snippets) {
-                snippet = snip;
-                i += 1;
-                snippet.Update();
+            void AfterUpdateSnippet(TextSnippet ts) {
                 if (!ignoreColors)
-                    color = snippet.GetVisibleColor();
-                scale = snippet.Scale * baseScale;
-                #region 处理有独特绘制的 Snippet (UniqueDraw)
-                if (snippet.UniqueDraw(true, out var size, null, scale: scale)) {
-                    // 若超限, 则先换行
-                    if (maxWidth >= 0 && positionNow.X != position.X && positionNow.X + size.X > position.X + maxWidth) {
-                        NewLine();
-                    }
-                    UniqueDraw(size);
-                    continue;
-                }
-                #endregion
-
-                string[] lines = snippet.Text.Split('\n');
-                Debug.Assert(lines.Length != 0);
-                #region 不限宽的处理
-                if (maxWidth < 0) {
-                    DrawString(lines[0]);
-                    for (int j = 1; j < lines.Length; ++j) {
-                        NewLine();
-                        var line = lines[j];
-                        DrawString(lines[j]);
-                    }
-                    continue;
-                }
-                #endregion
-                #region 限宽的处理
-                for (int j = 0; j < lines.Length; ++j) {
-                    if (j != 0) {
-                        NewLine();
-                    }
-                    var line = lines[j];
-                    StringBuilder wordBuilder = new();
-                    string? word = null;
-                    Vector2 wordSize = Vector2.Zero;
-                    for (int k = 0; k < line.Length; ++k) {
-                        char c = line[k];
-                        // 如果此字符属于一个单词...
-                        if ('A' <= c && c <= 'Z' || 'a' <= c && c <= 'z' || c == '_') {
-                            wordBuilder.Append(c);
-                            var lastWord = word;
-                            word = wordBuilder.ToString();
-                            wordSize = MeasureString(word);
-
-                        CheckOverWidth:
-                            // 如果超限...
-                            if (positionNow.X + wordSize.X >= position.X + maxWidth) {
-                                // 如果不处于开头, 则先换行, 再检查是否超限
-                                if (positionNow.X != position.X) {
-                                    NewLine();
-                                    goto CheckOverWidth;
-                                }
-                                // 如果此单词只有这个字母, 则画出它, 并清空单词
-                                if (lastWord == null) {
-                                    DrawString2(word, wordSize);
-                                    wordBuilder.Clear();
-                                    word = null;
-                                }
-                                // 否则画出没有这个字母的单词, 并换行, 清空单词, 放入这个字母
-                                else {
-                                    DrawString(lastWord);
-                                    NewLine();
-                                    wordBuilder.Clear();
-                                    wordBuilder.Append(c);
-                                    word = null;
-                                }
-                            }
-                            continue;
-                        }
-                        // 否则...
-                        // 若有单词则先画出单词
-                        if (word != null) {
-                            DrawString2(word, wordSize);
-                            word = null;
-                            wordBuilder.Clear();
-                        }
-                        #region 画出字母
-                        string s = new([c]);
-                        var charSize = MeasureString(s);
-                        // 若没有超限, 则直接画出并返回
-                        if (positionNow.X + charSize.X <= position.X + maxWidth) {
-                            DrawString2(s, charSize);
-                            continue;
-                        }
-                        // 若不处于开头, 则先换行
-                        if (positionNow.X != position.X) {
-                            NewLine();
-                        }
-                        // 直接画出
-                        DrawString2(s, charSize);
-                        #endregion
-                    }
-                    // 如果有残存单词则画出它
-                    if (word != null) {
-                        DrawString2(word, wordSize);
-                    }
-                }
-                #endregion
+                    color = ts.GetVisibleColor();
             }
-            #region 结尾处理
-            result.X.ClampMinTo(positionNow.X);
-            if (justNewLine) {
-                maxLineHeight.ClampMinTo(font.LineSpacing);
-            }
-            result.Y.ClampMinTo(positionNow.Y + maxLineHeight);
-            result -= position;
+            void PostHandleNonUniqueSnippet(TextSnippet ts) { }
+            void FinalProcess() { }
+            HandleSnippets(font, snippets, position, baseScale, maxWidth,
+                ref positionNow, ref result, ref scale, ref maxLineHeight, ref justNewLine, ref snippet, ref i,
+                NewLine, DrawString, UniqueDraw, AfterUpdateSnippet, PostHandleNonUniqueSnippet, FinalProcess);
             hoveredSnippet = hovered;
             return result;
-            #endregion
         }
-        
+        #endregion
         #region DrawStringShadow
         public static void DrawColorCodedStringShadow(SpriteBatch spriteBatch, DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, Vector2 position, Color baseColor, float rotation, Vector2 origin, float baseScale, float maxWidth = -1, float spread = 2) {
             for (int i = 0; i < ChatManager.ShadowDirections.Length; i++) {
@@ -1090,157 +836,49 @@ public static partial class TigerUtils {
             Vector2 position = Vector2.Zero;
             Vector2 positionNow = Vector2.Zero;
             Vector2 result = positionNow;
-            TextSnippet? lastAddedNonUniqueSnippet = null;
-            TextSnippet? snippet;
-            float scale;
+            TextSnippet? lastSnippetAddedNonUnique = null; // 如果最后一个加入的 snippet 是 unique 的话那么它会是 null
+            TextSnippet snippet = null!;
+            float scale = 1;
             float maxLineHeight = 0;
-            bool justNewLine = false;
+            bool justNewLine = true;
+            int i = 0;
             StringBuilder wrappedTextBuilder = new();
             #endregion
-            void NewLine() {
-                if (justNewLine) {
-                    maxLineHeight.ClampMinTo(font.LineSpacing);
-                }
-                positionNow.Y += maxLineHeight;
-                result.X.ClampMinTo(positionNow.X);
-                maxLineHeight = 0;
-                positionNow.X = position.X;
-                justNewLine = true;
+            void NewLine(bool unique) {
                 wrappedTextBuilder.Append('\n');
             }
-            Vector2 MeasureString(string str) {
-                return font.MeasureString(str) * scale;
-            }
-            void DrawString(string str) {
-                var size = MeasureString(str);
-                DrawString2(str, size);
-            }
-            void DrawString2(string str, Vector2 size) {
-                if (str.Length == 0) {
-                    return;
-                }
-                justNewLine = false;
-                positionNow.X += size.X;
-                Debug.Assert(size.Y >= font.LineSpacing);
-                maxLineHeight.ClampMinTo(size.Y);
+            void DrawString(string str, Vector2 size) {
                 wrappedTextBuilder.Append(str);
             }
-            void UniqueDraw(Vector2 size) {
+            void UniqueDraw(TextSnippet ts, Vector2 size) {
                 if (wrappedTextBuilder.Length != 0) {
-                    if (lastAddedNonUniqueSnippet == null) {
-                        lastAddedNonUniqueSnippet = new TextSnippet();
-                        wrapped.Add(lastAddedNonUniqueSnippet);
+                    // 应该来说这种情况只会在 UniqueDraw 之前调用了 NewLine 时存在
+                    // 即 wrappedTextBuilder 的内容只会是 "\n"
+                    Debug.Assert(wrappedTextBuilder.ToString() == "\n");
+                    if (lastSnippetAddedNonUnique == null) {
+                        lastSnippetAddedNonUnique = new TextSnippet();
+                        wrapped.Add(lastSnippetAddedNonUnique);
                     }
-                    lastAddedNonUniqueSnippet.Text += wrappedTextBuilder.ToString();
+                    lastSnippetAddedNonUnique.Text += wrappedTextBuilder.ToString();
                     wrappedTextBuilder.Clear();
                 }
-                justNewLine = false;
-                positionNow.X += size.X;
-                maxLineHeight.ClampMinTo(size.Y);
-                wrapped.Add(ShallowClone(snippet));
-                lastAddedNonUniqueSnippet = null;
+                wrapped.Add(ShallowClone(ts));
+                lastSnippetAddedNonUnique = null;
             }
-            foreach (TextSnippet snip in snippets) {
-                snippet = snip;
-                snippet.Update();
-                scale = snippet.Scale * baseScale;
-                #region 处理有独特绘制的 Snippet (UniqueDraw)
-                if (snippet.UniqueDraw(true, out var size, null, scale: scale)) {
-                    if (maxWidth >= 0 && positionNow.X != 0 && positionNow.X + size.X > maxWidth) {
-                        NewLine();
-                    }
-                    UniqueDraw(size);
-                    continue;
-                }
-                #endregion
-
-                string[] lines = snippet.Text.Split('\n');
-                for (int j = 0; j < lines.Length; ++j) {
-                    if (j != 0) {
-                        NewLine();
-                    }
-                    var line = lines[j];
-                    StringBuilder wordBuilder = new();
-                    string? word = null;
-                    Vector2 wordSize = Vector2.Zero;
-                    for (int k = 0; k < line.Length; ++k) {
-                        char c = line[k];
-                        // 如果此字符属于一个单词...
-                        if ('A' <= c && c <= 'Z' || 'a' <= c && c <= 'z' || c == '_') {
-                            wordBuilder.Append(c);
-                            var lastWord = word;
-                            word = wordBuilder.ToString();
-                            wordSize = MeasureString(word);
-
-                        CheckOverWidth:
-                            // 如果超限...
-                            if (positionNow.X + wordSize.X >= position.X + maxWidth) {
-                                // 如果不处于开头, 则先换行, 再检查是否超限
-                                if (positionNow.X != position.X) {
-                                    NewLine();
-                                    goto CheckOverWidth;
-                                }
-                                // 如果此单词只有这个字母, 则画出它, 并清空单词
-                                if (lastWord == null) {
-                                    DrawString2(word, wordSize);
-                                    wordBuilder.Clear();
-                                    word = null;
-                                }
-                                // 否则画出没有这个字母的单词, 并换行, 清空单词, 放入这个字母
-                                else {
-                                    DrawString(lastWord);
-                                    NewLine();
-                                    wordBuilder.Clear();
-                                    wordBuilder.Append(c);
-                                    word = null;
-                                }
-                            }
-                            continue;
-                        }
-                        // 否则...
-                        // 若有单词则先画出单词
-                        if (word != null) {
-                            DrawString2(word, wordSize);
-                            word = null;
-                            wordBuilder.Clear();
-                        }
-                        #region 画出字母
-                        string s = new([c]);
-                        var charSize = MeasureString(s);
-                        // 若没有超限, 则直接画出并返回
-                        if (positionNow.X + charSize.X <= position.X + maxWidth) {
-                            DrawString2(s, charSize);
-                            continue;
-                        }
-                        // 若不处于开头, 则先换行
-                        if (positionNow.X != position.X) {
-                            NewLine();
-                        }
-                        // 直接画出
-                        DrawString2(s, charSize);
-                        #endregion
-                    }
-                    // 如果有残存单词则画出它
-                    if (word != null) {
-                        DrawString2(word, wordSize);
-                    }
-                }
+            void AfterUpdateSnippet(TextSnippet ts) { }
+            void PostHandleNonUniqueSnippet(TextSnippet ts) {
                 #region 将 snippet 克隆到新数组中
-                lastAddedNonUniqueSnippet = ShallowClone(snippet);
-                lastAddedNonUniqueSnippet.Text = wrappedTextBuilder.ToString();
+                lastSnippetAddedNonUnique = ShallowClone(ts);
+                lastSnippetAddedNonUnique.Text = wrappedTextBuilder.ToString();
                 wrappedTextBuilder.Clear();
-                wrapped.Add(lastAddedNonUniqueSnippet);
+                wrapped.Add(lastSnippetAddedNonUnique);
                 #endregion
             }
-            #region 结尾处理
-            result.X.ClampMinTo(positionNow.X);
-            if (justNewLine) {
-                maxLineHeight.ClampMinTo(font.LineSpacing);
-            }
-            result.Y.ClampMinTo(positionNow.Y + maxLineHeight);
-            result -= position;
+            void FinalProcess() { }
+            HandleSnippets(font, snippets, position, baseScale, maxWidth,
+                ref positionNow, ref result, ref scale, ref maxLineHeight, ref justNewLine, ref snippet, ref i,
+                NewLine, DrawString, UniqueDraw, AfterUpdateSnippet, PostHandleNonUniqueSnippet, FinalProcess);
             textSize = result;
-            #endregion
             return wrapped;
         }
         /// <inheritdoc cref="CreateWrappedText(DynamicSpriteFont, IEnumerable{TextSnippet}, float, float, out Vector2)"/>
@@ -1257,96 +895,303 @@ public static partial class TigerUtils {
         }
         #endregion
         #region CreatePagedText
-        // TODO: 取消使用 wrapped, 在添加时先检查高度?
-        // WIP
+        // 用 DEBUG 改着改着就改的稀烂了, 但起码能用了
         public static List<List<TextSnippet>> CreatePagedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale, float maxWidth, float maxHeight) {
             if (maxHeight < 0) {
                 return [CreateWrappedText(font, snippets, baseScale, maxWidth)];
             }
             #region 局部变量初始化
-            List<List<TextSnippet>> paged = [];
-            List<TextSnippet> wrapped = [];
+            List<List<TextSnippet>> pages = []; // 所有页
+            List<TextSnippet> page = []; // 页, 原 wrapped
+            List<TextSnippet> lineSnippets = []; // 行, 跨行的 snippet 属于最后一行
             Vector2 position = Vector2.Zero;
             Vector2 positionNow = Vector2.Zero;
-            TextSnippet? lastAddedNonUniqueSnippet = null;
-            TextSnippet? snippet = null;
-            float scale;
+            Vector2 result = Vector2.Zero;
+            TextSnippet? lastSnippetAddedToPageNonUnique = null; // 如果最后一个加入的 snippet 是 unique 的话那么它会是 null
+            bool isLastAddedToLineUnique = false;
+            bool isFirstAddedToLineUnique = false;
+            TextSnippet snippet = null!;
+            float scale = 1;
             float maxLineHeight = 0;
-            bool justNewLine = false;
-            StringBuilder wrappedTextBuilder = new();
+            bool justNewLine = true;
+            int i = 0;
+            bool hasPageText = false;
+            StringBuilder pageTextBuilder = new(); // 页内容
+            StringBuilder lineTextBuilder = new(); // 行内容
+            StringBuilder lineStartTextBuilder = new(); // 行首内容, 只在行首的多行 snippet 结束于此行时有内容
+            // 将其设置为 false 需同时保证 pageTextBuilder 长度为 0
+            bool inLineStartText = true;
+            // 表示处于页的开头行, 用于判断是否要在换行时是否要在将行添加到页前是否添加换行符
+            bool inPageStart = true;
             #endregion
-            void NewPage() {
-                if (wrappedTextBuilder.Length != 0 && snippet != null) {
-                    lastAddedNonUniqueSnippet = ShallowClone(snippet);
-                    lastAddedNonUniqueSnippet.Text = wrappedTextBuilder.ToString();
-                    wrappedTextBuilder.Clear();
-                    wrapped.Add(lastAddedNonUniqueSnippet);
+            void AddLineSnippet(TextSnippet snippet, bool unique) {
+                if (lineSnippets.Count == 0) {
+                    isFirstAddedToLineUnique = unique;
                 }
-                paged.Add(wrapped);
-                wrapped = [];
-                maxLineHeight = 0;
-                positionNow = position;
-                justNewLine = true;
+                lineSnippets.Add(snippet);
+                isLastAddedToLineUnique = unique;
             }
-            void NewLine() {
-                if (justNewLine) {
-                    maxLineHeight.ClampMinTo(font.LineSpacing);
+            void AddPageSnippet(TextSnippet snippet, bool unique) {
+                page.Add(snippet);
+                lastSnippetAddedToPageNonUnique = unique ? null : snippet;
+            }
+            // 需要 snippets 长度非 0
+            void AddPageSnippets(List<TextSnippet> snippets, bool lastUnique) {
+                page.AddRange(snippets);
+                lastSnippetAddedToPageNonUnique = lastUnique ? null : snippets[^1];
+            }
+            // 保证 pageTextBuilder 长度为 0
+            void NewPage() {
+                // 将页内容放入 snippet 中
+                if (pageTextBuilder.Length != 0) {
+                    var snippetToAdd = ShallowClone(snippet);
+                    AddPageSnippet(snippetToAdd, false);
+                    snippetToAdd.Text = pageTextBuilder.ToString();
+                    pageTextBuilder.Clear();
                 }
-                // 若超高...
+                pages.Add(page);
+                page = [];
+                positionNow = position;
+                result = position;
+                inPageStart = true;
+            }
+            // 保证 lineTextBuilder 长度为 0
+            // 保证 lineStartTextBuilder 长度为 0
+            // 保证 inLineStartText 为 true
+            // 保证 lineSnippets 长度为 0
+            void NewLine(bool unique) {
+                // 若超高, 则先换页
                 if (positionNow.Y + maxLineHeight > position.Y + maxHeight) {
                     if (positionNow.Y != position.Y) {
                         NewPage();
-                        return;
                     }
                 }
+                bool noPageText = pageTextBuilder.Length == 0;
+                // 若没有换页, 则先在页内容中添加一个换行符
+                if (!inPageStart) {
+                    pageTextBuilder.Append('\n');
+                }
+                // 如果此行开始有字符, 将其添加到上一个添加到页中的普通 snippet, 若无则添加一个新 snippet 到页
+                if (lineStartTextBuilder.Length != 0) {
+                    pageTextBuilder.Append(lineStartTextBuilder);
+                    lineStartTextBuilder.Clear();
+                    if (lastSnippetAddedToPageNonUnique != null) {
+                        if (page.Count == 0) {
+                            var snippetToAdd = ShallowClone(lastSnippetAddedToPageNonUnique);
+                            snippetToAdd.Text = pageTextBuilder.ToString();
+                            AddPageSnippet(snippetToAdd, false);
+                        }
+                        else {
+                            lastSnippetAddedToPageNonUnique.Text += pageTextBuilder.ToString();
+                        }
+                    }
+                    else {
+                        TextSnippet snippetToAdd = new(pageTextBuilder.ToString());
+                        AddPageSnippet(snippetToAdd, false);
+                    }
+                    pageTextBuilder.Clear();
+                }
+                Debug.Assert(!unique || lineTextBuilder.Length == 0);
+                if (unique || lineSnippets.Count != 0) {
+                    Debug.Assert(noPageText);
+                    if (hasPageText || pageTextBuilder.Length != 0) {
+                        hasPageText = false;
+                        if (page.Count != 0 && lastSnippetAddedToPageNonUnique != null) {
+                            lastSnippetAddedToPageNonUnique.Text += pageTextBuilder.ToString();
+                        }
+                        else if (lineSnippets.Count != 0 && !isFirstAddedToLineUnique) {
+                            lineSnippets[0].Text = pageTextBuilder.ToString() + lineSnippets[0].Text;
+                        }
+                        else {
+                            TextSnippet snippetToAdd = new(pageTextBuilder.ToString());
+                            AddPageSnippet(snippetToAdd, false);
+                        }
+                        pageTextBuilder.Clear();
+                    }
+                }
+                // 将此行添加到页中
+                if (lineSnippets.Count != 0) {
+                    AddPageSnippets(lineSnippets, isLastAddedToLineUnique);
+                    lineSnippets.Clear();
+                }
+                // 将行内容添加到页内容中
+                pageTextBuilder.Append(lineTextBuilder);
+                lineTextBuilder.Clear();
+                if (!unique) {
+                    hasPageText = true;
+                }
+                inLineStartText = true;
+                inPageStart = false;
+            }
+            // 字符串默认写入行内容中
+            void DrawString(string str, Vector2 size) {
+                lineTextBuilder.Append(str);
+            }
+            // 保证 inLineStartText 为 false (即保证 pageTextBuilder 长度为 0)
+            // 保证 lineTextBuilder 长度为 0
+            void UniqueDraw(TextSnippet snippet, Vector2 size) {
+                // 由于在 NewLine 和 PostHandleNonUniqueSnippet 中都保证了 lineTextBuilder 的长度为 0, 所以此处它的长度应保持为 0
+                Debug.Assert(lineTextBuilder.Length == 0);
+                // 由于此方法不然就在 PostHandleNonUnique 后, 不然就在 UniqueDraw 后, 不然就在它们接着 NewLine 后
+                // 所以 pageTextBuilder 应该只会是 ""
+                Debug.Assert(pageTextBuilder.Length == 0);
+                inLineStartText = false;
+                AddLineSnippet(ShallowClone(snippet), true);
+            }
+            void AfterUpdateSnippet(TextSnippet snippet) { }
+            // 保证处理完后 lineTextBuilder 长度为 0
+            // 保证 inLineStartText 为 false (即保证 pageTextBuilder 长度为 0)
+            // 可能会在 lineStartTextBuilder 中保存信息
+            void PostHandleNonUniqueSnippet(TextSnippet snippet) {
+                TextSnippet snippetToAdd = ShallowClone(snippet);
+                // 若不是开头的, 则直接放入行中
+                if (!inLineStartText) {
+                    Debug.Assert(pageTextBuilder.Length == 0);
+                    snippet.Text = lineTextBuilder.ToString();
+                    lineTextBuilder.Clear();
+                    AddLineSnippet(snippetToAdd, false);
+                    return;
+                }
+                // 如果是开头的普通 snippet...
+                inLineStartText = false;
+                // 若没有页内容...
+                if (pageTextBuilder.Length == 0) {
+                    // 将行内容转换为此 snippet 放入行中
+                    snippetToAdd.Text = lineTextBuilder.ToString();
+                    lineTextBuilder.Clear();
+                    AddLineSnippet(snippetToAdd, false);
+                }
+                // 若有页内容...
+                else {
+                    Debug.Assert(lineSnippets.Count == 0);
+                    // 将其取出转换为此 snippet 放入页中
+                    snippetToAdd.Text = pageTextBuilder.ToString();
+                    pageTextBuilder.Clear();
+                    AddPageSnippet(snippetToAdd, false);
+                    // 行内容放入行首内容
+                    lineStartTextBuilder.Append(lineTextBuilder);
+                    lineTextBuilder.Clear();
+                }
+                
+            }
+            void FinalProcess() {
+                // 若超高, 则先换页
+                if (positionNow.Y + maxLineHeight > position.Y + maxHeight) {
+                    if (positionNow.Y != position.Y) {
+                        NewPage();
+                    }
+                }
+                Debug.Assert(pageTextBuilder.Length == 0);
+                Debug.Assert(lineTextBuilder.Length == 0);
+                // 若没有换页, 则先在页内容中添加一个换行符
+                if (!inPageStart) {
+                    pageTextBuilder.Append('\n');
+                }
+                // 如果此行开始有字符, 将其添加到上一个添加到页中的普通 snippet, 若无则添加一个新 snippet 到页
+                if (lineStartTextBuilder.Length != 0) {
+                    pageTextBuilder.Append(lineStartTextBuilder);
+                    lineStartTextBuilder.Clear();
+                    if (lastSnippetAddedToPageNonUnique != null) {
+                        lastSnippetAddedToPageNonUnique.Text += pageTextBuilder.ToString();
+                    }
+                    else {
+                        TextSnippet snippetToAdd = new(pageTextBuilder.ToString());
+                        AddPageSnippet(snippetToAdd, false);
+                    }
+                    pageTextBuilder.Clear();
+                }
+                if (lineSnippets.Count != 0) {
+                    if (hasPageText || pageTextBuilder.Length != 0) {
+                        hasPageText = false;
+                        if (lastSnippetAddedToPageNonUnique != null) {
+                            lastSnippetAddedToPageNonUnique.Text += pageTextBuilder.ToString();
+                        }
+                        else if (lineSnippets.Count != 0 && !isFirstAddedToLineUnique) {
+                            lineSnippets[0].Text = pageTextBuilder.ToString() + lineSnippets[0].Text;
+                        }
+                        else {
+                            TextSnippet snippetToAdd = new(pageTextBuilder.ToString());
+                            AddPageSnippet(snippetToAdd, false);
+                        }
+                        pageTextBuilder.Clear();
+                    }
+                    AddPageSnippets(lineSnippets, isLastAddedToLineUnique);
+                    lineSnippets.Clear();
+                }
+                pages.Add(page);
+            }
+            HandleSnippets(font, snippets, position, baseScale, maxWidth,
+                ref positionNow, ref result, ref scale, ref maxLineHeight, ref justNewLine, ref snippet, ref i,
+                NewLine, DrawString, UniqueDraw, AfterUpdateSnippet, PostHandleNonUniqueSnippet, FinalProcess);
+            return pages;
+        }
+        public static List<List<TextSnippet>> CreatePagedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale, Vector2 pageSize) {
+            return CreatePagedText(font, snippets, baseScale, pageSize.X, pageSize.Y);
+        }
+        public static List<List<TextSnippet>> CreatePagedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float maxWidth, float maxHeight) {
+            return CreatePagedText(font, snippets, 1, maxWidth, maxHeight);
+        }
+        public static List<List<TextSnippet>> CreatePagedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, Vector2 pageSize) {
+            return CreatePagedText(font, snippets, 1, pageSize.X, pageSize.Y);
+        }
+        #endregion
+
+        #region 一切的根基 HandleSnippets
+        private static void HandleSnippets(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, Vector2 position, float baseScale, float maxWidth,
+            ref Vector2 positionNow, ref Vector2 result, ref float scale, ref float maxLineHeight, ref bool justNewLine, ref TextSnippet snippet, ref int i,
+            Action<bool> NewLine, Action<string, Vector2> DrawString, Action<TextSnippet, Vector2> UniqueDraw, Action<TextSnippet> AfterUpdateSnippet, Action<TextSnippet> PostHandleNonUniqueSnippet, Action FinalProcess
+        ) {
+            #region 局部变量初始化
+            i = -1;
+            float scaleInner;
+            #endregion
+            #region 本地函数
+            void NewLineInner(ref Vector2 positionNow, ref Vector2 result, ref float maxLineHeight, ref bool justNewLine, bool unique = false) {
+                if (justNewLine) {
+                    maxLineHeight.ClampMinTo(font.LineSpacing);
+                }
+                NewLine(unique);
                 positionNow.Y += maxLineHeight;
+                result.X.ClampMinTo(positionNow.X);
                 maxLineHeight = 0;
                 positionNow.X = position.X;
                 justNewLine = true;
-                wrappedTextBuilder.Append('\n');
             }
             Vector2 MeasureString(string str) {
-                return font.MeasureString(str) * scale;
+                return font.MeasureString(str) * scaleInner;
             }
-            void DrawString(string str) {
+            void DrawStringSimple(string str, ref Vector2 positionNow, ref float maxLineHeight, ref bool justNewLine) {
                 var size = MeasureString(str);
-                DrawString2(str, size);
+                DrawStringInner(str, size, ref positionNow, ref maxLineHeight, ref justNewLine);
             }
-            void DrawString2(string str, Vector2 size) {
+            void DrawStringInner(string str, Vector2 size, ref Vector2 positionNow, ref float maxLineHeight, ref bool justNewLine) {
                 if (str.Length == 0) {
                     return;
                 }
                 justNewLine = false;
+                DrawString(str, size);
                 positionNow.X += size.X;
                 Debug.Assert(size.Y >= font.LineSpacing);
                 maxLineHeight.ClampMinTo(size.Y);
-                wrappedTextBuilder.Append(str);
+                
             }
-            void UniqueDraw(Vector2 size) {
-                if (wrappedTextBuilder.Length != 0) {
-                    if (lastAddedNonUniqueSnippet == null) {
-                        lastAddedNonUniqueSnippet = new TextSnippet();
-                        wrapped.Add(lastAddedNonUniqueSnippet);
-                    }
-                    lastAddedNonUniqueSnippet.Text += wrappedTextBuilder.ToString();
-                    wrappedTextBuilder.Clear();
-                }
-                justNewLine = false;
-                positionNow.X += size.X;
-                maxLineHeight.ClampMinTo(size.Y);
-                wrapped.Add(ShallowClone(snippet));
-                lastAddedNonUniqueSnippet = null;
-            }
-            foreach (TextSnippet snip in snippets) {
+            #endregion
+            foreach (var snip in snippets) {
                 snippet = snip;
+                i += 1;
                 snippet.Update();
-                scale = snippet.Scale * baseScale;
+                AfterUpdateSnippet(snippet);
+                scaleInner = scale = snippet.Scale * baseScale;
                 #region 处理有独特绘制的 Snippet (UniqueDraw)
                 if (snippet.UniqueDraw(true, out var size, null, scale: scale)) {
-                    if (maxWidth >= 0 && positionNow.X != 0 && positionNow.X + size.X > maxWidth) {
-                        NewLine();
+                    // 若超限, 则先换行
+                    if (maxWidth >= 0 && positionNow.X != position.X && positionNow.X + size.X > position.X + maxWidth) {
+                        NewLineInner(ref positionNow, ref result, ref maxLineHeight, ref justNewLine, unique: true);
                     }
-                    UniqueDraw(size);
+                    justNewLine = false;
+                    UniqueDraw(snippet, size);
+                    positionNow.X += size.X;
+                    maxLineHeight.ClampMinTo(size.Y);
                     continue;
                 }
                 #endregion
@@ -1355,19 +1200,19 @@ public static partial class TigerUtils {
                 Debug.Assert(lines.Length != 0);
                 #region 不限宽的处理
                 if (maxWidth < 0) {
-                    DrawString(lines[0]);
+                    DrawStringSimple(lines[0], ref positionNow, ref maxLineHeight, ref justNewLine);
                     for (int j = 1; j < lines.Length; ++j) {
-                        NewLine();
-                        var line = lines[j];
-                        DrawString(lines[j]);
+                        NewLineInner(ref positionNow, ref result, ref maxLineHeight, ref justNewLine);
+                        DrawStringSimple(lines[j], ref positionNow, ref maxLineHeight, ref justNewLine);
                     }
+                    PostHandleNonUniqueSnippet(snippet);
                     continue;
                 }
                 #endregion
                 #region 限宽的处理
                 for (int j = 0; j < lines.Length; ++j) {
                     if (j != 0) {
-                        NewLine();
+                        NewLineInner(ref positionNow, ref result, ref maxLineHeight, ref justNewLine);
                     }
                     var line = lines[j];
                     StringBuilder wordBuilder = new();
@@ -1387,19 +1232,19 @@ public static partial class TigerUtils {
                             if (positionNow.X + wordSize.X >= position.X + maxWidth) {
                                 // 如果不处于开头, 则先换行, 再检查是否超限
                                 if (positionNow.X != position.X) {
-                                    NewLine();
+                                    NewLineInner(ref positionNow, ref result, ref maxLineHeight, ref justNewLine);
                                     goto CheckOverWidth;
                                 }
                                 // 如果此单词只有这个字母, 则画出它, 并清空单词
                                 if (lastWord == null) {
-                                    DrawString2(word, wordSize);
+                                    DrawStringInner(word, wordSize, ref positionNow, ref maxLineHeight, ref justNewLine);
                                     wordBuilder.Clear();
                                     word = null;
                                 }
                                 // 否则画出没有这个字母的单词, 并换行, 清空单词, 放入这个字母
                                 else {
-                                    DrawString(lastWord);
-                                    NewLine();
+                                    DrawStringSimple(lastWord, ref positionNow, ref maxLineHeight, ref justNewLine);
+                                    NewLineInner(ref positionNow, ref result, ref maxLineHeight, ref justNewLine);
                                     wordBuilder.Clear();
                                     wordBuilder.Append(c);
                                     word = null;
@@ -1410,7 +1255,7 @@ public static partial class TigerUtils {
                         // 否则...
                         // 若有单词则先画出单词
                         if (word != null) {
-                            DrawString2(word, wordSize);
+                            DrawStringInner(word, wordSize, ref positionNow, ref maxLineHeight, ref justNewLine);
                             word = null;
                             wordBuilder.Clear();
                         }
@@ -1419,44 +1264,32 @@ public static partial class TigerUtils {
                         var charSize = MeasureString(s);
                         // 若没有超限, 则直接画出并返回
                         if (positionNow.X + charSize.X <= position.X + maxWidth) {
-                            DrawString2(s, charSize);
+                            DrawStringInner(s, charSize, ref positionNow, ref maxLineHeight, ref justNewLine);
                             continue;
                         }
                         // 若不处于开头, 则先换行
                         if (positionNow.X != position.X) {
-                            NewLine();
+                            NewLineInner(ref positionNow, ref result, ref maxLineHeight, ref justNewLine);
                         }
                         // 直接画出
-                        DrawString2(s, charSize);
+                        DrawStringInner(s, charSize, ref positionNow, ref maxLineHeight, ref justNewLine);
                         #endregion
                     }
                     // 如果有残存单词则画出它
                     if (word != null) {
-                        DrawString2(word, wordSize);
+                        DrawStringInner(word, wordSize, ref positionNow, ref maxLineHeight, ref justNewLine);
                     }
                 }
-                #endregion
-                #region 将 snippet 克隆到新数组中
-                if (wrappedTextBuilder.Length > 0) {
-                    lastAddedNonUniqueSnippet = ShallowClone(snippet);
-                    lastAddedNonUniqueSnippet.Text = wrappedTextBuilder.ToString();
-                    wrappedTextBuilder.Clear();
-                    wrapped.Add(lastAddedNonUniqueSnippet);
-                }
+                PostHandleNonUniqueSnippet(snippet);
                 #endregion
             }
-            #region 结尾处理
+            FinalProcess();
+            result.X.ClampMinTo(positionNow.X);
             if (justNewLine) {
                 maxLineHeight.ClampMinTo(font.LineSpacing);
             }
-            // 若超高...
-            if (positionNow.Y + maxLineHeight > position.Y + maxHeight && positionNow.Y != position.Y) {
-                paged.Add(wrapped);
-                wrapped = [new TextSnippet("\n")];
-            }
-            paged.Add(wrapped);
-            #endregion
-            return paged;
+            result.Y.ClampMinTo(positionNow.Y + maxLineHeight);
+            result -= position;
         }
         #endregion
     }
