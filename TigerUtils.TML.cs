@@ -5,7 +5,6 @@ using ReLogic.Content;
 using ReLogic.Graphics;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
@@ -15,7 +14,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Xml;
 using Terraria;
 using Terraria.DataStructures;
 using Terraria.GameContent;
@@ -726,15 +724,37 @@ public static partial class TigerUtils {
         }
         #endregion
 
+        #region Parse
+        public static List<TextSnippet> Parse(string text, Color baseColor, bool convertNormalSnippets = false) {
+            var snippets = ChatManager.ParseMessage(text, baseColor);
+            if (convertNormalSnippets) {
+                ConvertNormalSnippets(snippets);
+            }
+            return snippets;
+        }
+        #endregion
+        #region ConvertNormalSnippets
+        public static T ConvertNormalSnippets<T>(T snippets) where T : IList<TextSnippet> {
+            for (int i = 0; i < snippets.Count; i++) {
+                TextSnippet snippet = snippets[i];
+                if (snippets[i].GetType() == typeof(TextSnippet)) {
+                    PlainTagHandler.PlainSnippet plainSnippet = new(snippet.Text, snippet.Color, snippet.Scale);
+                    snippets[i] = plainSnippet;
+                }
+            }
+            return snippets;
+        }
+        #endregion
         #region GetStringSize
-        public static Vector2 GetStringSize(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale = 1, float maxWidth = -1f) {
+        public static Vector2 GetStringSize(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale, float maxWidth,
+            ref Vector2 positionNow, ref float maxLineHeightNow) {
             #region 局部变量初始化
             Vector2 position = Vector2.Zero;
-            Vector2 positionNow = Vector2.Zero;
+            Vector2 positionNowInner = positionNow;
             Vector2 result = Vector2.Zero;
             TextSnippet snippet = null!;
             float scale = 1;
-            float maxLineHeight = 0;
+            float maxLineHeightInner = maxLineHeightNow;
             bool justNewLine = true;
             int i = 0;
             #endregion
@@ -745,9 +765,16 @@ public static partial class TigerUtils {
             void PostHandleNonUniqueSnippet(TextSnippet ts) { }
             void FinalProcess() { }
             HandleSnippets(font, snippets, Vector2.Zero, baseScale, maxWidth,
-                ref positionNow, ref result, ref scale, ref maxLineHeight, ref justNewLine, ref snippet, ref i,
+                ref positionNowInner, ref result, ref scale, ref maxLineHeightInner, ref justNewLine, ref snippet, ref i,
                 NewLine, DrawString, UniqueDraw, AfterUpdateSnippet, PostHandleNonUniqueSnippet, FinalProcess);
+            positionNow = positionNowInner;
+            maxLineHeightNow = maxLineHeightInner;
             return result;
+        }
+        public static Vector2 GetStringSize(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale = 1, float maxWidth = -1f) {
+            Vector2 positionNow = Vector2.Zero;
+            float maxLineHeightNow = 0;
+            return GetStringSize(font, snippets, baseScale, maxWidth, ref positionNow, ref maxLineHeightNow);
         }
         #endregion
         #region DrawString
@@ -760,16 +787,17 @@ public static partial class TigerUtils {
         /// <br/><paramref name="baseScae"/> 变为 float
         /// <br/>返回值现在是大小而不是右下角的位置
         /// </summary>
-        public static Vector2 DrawColorCodedString(SpriteBatch spriteBatch, DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, Vector2 position, Color baseColor, float rotation, Vector2 origin, float baseScale, out int hoveredSnippet, float maxWidth = -1, bool ignoreColors = false) {
+        public static Vector2 DrawColorCodedString(SpriteBatch spriteBatch, DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, Vector2 position, Color baseColor, float rotation, Vector2 origin, float baseScale, out int hoveredSnippet, float maxWidth, bool ignoreColors,
+            ref Vector2 positionNow, ref float maxLineHeightNow) {
             #region 局部变量初始化
             int hovered = -1;
             Vector2 mousePosition = Main.MouseScreen;
-            Vector2 positionNow = position;
-            Vector2 result = positionNow;
+            Vector2 positionNowInner = positionNow;
+            Vector2 result = positionNowInner;
             Color color = baseColor;
             TextSnippet snippet = null!;
             float scale = 1;
-            float maxLineHeight = 0;
+            float maxLineHeightInner = maxLineHeightNow;
             bool justNewLine = true;
             int i = -1;
             #endregion
@@ -777,11 +805,11 @@ public static partial class TigerUtils {
             void DrawString(string str, Vector2 size) {
                 // Terraria 原版原本这里是莫名其妙的 snippet.Scale ^ 2, 这里还是把它修了吧
                 // spriteBatch.DrawString(font, str, positionNow, color, rotation, origin, baseScale * snippet.Scale * snippetScale, SpriteEffects.None, 0f);
-                spriteBatch.DrawString(font, str, positionNow, color, rotation, origin, scale, SpriteEffects.None, 0);
+                spriteBatch.DrawString(font, str, positionNowInner, color, rotation, origin, scale, SpriteEffects.None, 0);
             }
             void UniqueDraw(TextSnippet ts, Vector2 size) {
-                ts.UniqueDraw(false, out _, spriteBatch, positionNow, color, scale);
-                if (mousePosition.Between(positionNow, positionNow + size))
+                ts.UniqueDraw(false, out _, spriteBatch, positionNowInner, color, scale);
+                if (mousePosition.Between(positionNowInner, positionNowInner + size))
                     hovered = i;
             }
             void AfterUpdateSnippet(TextSnippet ts) {
@@ -791,10 +819,17 @@ public static partial class TigerUtils {
             void PostHandleNonUniqueSnippet(TextSnippet ts) { }
             void FinalProcess() { }
             HandleSnippets(font, snippets, position, baseScale, maxWidth,
-                ref positionNow, ref result, ref scale, ref maxLineHeight, ref justNewLine, ref snippet, ref i,
+                ref positionNowInner, ref result, ref scale, ref maxLineHeightInner, ref justNewLine, ref snippet, ref i,
                 NewLine, DrawString, UniqueDraw, AfterUpdateSnippet, PostHandleNonUniqueSnippet, FinalProcess);
             hoveredSnippet = hovered;
+            positionNow = positionNowInner;
+            maxLineHeightNow = maxLineHeightInner;
             return result;
+        }
+        public static Vector2 DrawColorCodedString(SpriteBatch spriteBatch, DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, Vector2 position, Color baseColor, float rotation, Vector2 origin, float baseScale, out int hoveredSnippet, float maxWidth = -1, bool ignoreColors = false) {
+            Vector2 positionNow = position;
+            float maxLineHeightNow = 0;
+            return DrawColorCodedString(spriteBatch, font, snippets, position, baseColor, rotation, origin, baseScale, out hoveredSnippet, maxWidth, ignoreColors, ref positionNow, ref maxLineHeightNow);
         }
         #endregion
         #region DrawStringShadow
@@ -820,13 +855,19 @@ public static partial class TigerUtils {
             DrawColorCodedStringShadow(spriteBatch, font, snippets, position, shadowColor, rotation, origin, baseScale, maxWidth, spread);
             return DrawColorCodedString(spriteBatch, font, snippets, position, color, rotation, origin, baseScale, out hoveredSnippet, maxWidth);
         }
+        // 带有前景和后景颜色和 ref 参数的版本
+        public static Vector2 DrawColorCodedStringWithShadow(SpriteBatch spriteBatch, DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, Vector2 position, float rotation, Color color, Color shadowColor, Vector2 origin, float baseScale, out int hoveredSnippet, float maxWidth, float spread, ref Vector2 positionNow, ref float maxLineHeightNow) {
+            DrawColorCodedStringShadow(spriteBatch, font, snippets, position, shadowColor, rotation, origin, baseScale, maxWidth, spread);
+            return DrawColorCodedString(spriteBatch, font, snippets, position, color, rotation, origin, baseScale, out hoveredSnippet, maxWidth, false, ref positionNow, ref maxLineHeightNow);
+        }
         #endregion
         #region CreateWrappedText
         /// <summary>
         /// 使用了 object.MemberwiseClone 克隆
         /// 如果想让特定 TextSnippet 实现深拷贝需实现 <see cref="ICloneable"/>
         /// </summary>
-        public static List<TextSnippet> CreateWrappedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale, float maxWidth, out Vector2 textSize) {
+        public static List<TextSnippet> CreateWrappedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale, float maxWidth,
+            out Vector2 textSize, ref Vector2 positionNow, ref float maxLineHeightNow) {
             if (maxWidth < 0) {
                 textSize = GetStringSize(font, snippets, baseScale);
                 return snippets.ToList();
@@ -834,12 +875,12 @@ public static partial class TigerUtils {
             #region 局部变量初始化
             List<TextSnippet> wrapped = [];
             Vector2 position = Vector2.Zero;
-            Vector2 positionNow = Vector2.Zero;
-            Vector2 result = positionNow;
+            Vector2 positionNowInner = positionNow;
+            Vector2 result = positionNowInner;
             TextSnippet? lastSnippetAddedNonUnique = null; // 如果最后一个加入的 snippet 是 unique 的话那么它会是 null
             TextSnippet snippet = null!;
             float scale = 1;
-            float maxLineHeight = 0;
+            float maxLineHeightInner = maxLineHeightNow;
             bool justNewLine = true;
             int i = 0;
             StringBuilder wrappedTextBuilder = new();
@@ -876,10 +917,18 @@ public static partial class TigerUtils {
             }
             void FinalProcess() { }
             HandleSnippets(font, snippets, position, baseScale, maxWidth,
-                ref positionNow, ref result, ref scale, ref maxLineHeight, ref justNewLine, ref snippet, ref i,
+                ref positionNowInner, ref result, ref scale, ref maxLineHeightInner, ref justNewLine, ref snippet, ref i,
                 NewLine, DrawString, UniqueDraw, AfterUpdateSnippet, PostHandleNonUniqueSnippet, FinalProcess);
+            positionNow = positionNowInner;
+            maxLineHeightNow = maxLineHeightInner;
             textSize = result;
             return wrapped;
+        }
+        /// <inheritdoc cref="CreateWrappedText(DynamicSpriteFont, IEnumerable{TextSnippet}, float, float, out Vector2)"/>
+        public static List<TextSnippet> CreateWrappedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale, float maxWidth, out Vector2 textSize) {
+            Vector2 positionNow = Vector2.Zero;
+            float maxLineHeightNow = 0;
+            return CreateWrappedText(font, snippets, baseScale, maxWidth, out textSize, ref positionNow, ref maxLineHeightNow);
         }
         /// <inheritdoc cref="CreateWrappedText(DynamicSpriteFont, IEnumerable{TextSnippet}, float, float, out Vector2)"/>
         public static List<TextSnippet> CreateWrappedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float maxWidth, out Vector2 textSize) {
@@ -896,7 +945,8 @@ public static partial class TigerUtils {
         #endregion
         #region CreatePagedText
         // 用 DEBUG 改着改着就改的稀烂了, 但起码能用了
-        public static List<List<TextSnippet>> CreatePagedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale, float maxWidth, float maxHeight) {
+        public static List<List<TextSnippet>> CreatePagedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale, float maxWidth, float maxHeight,
+            ref Vector2 positionNow, ref float maxLineHeightNow, ref Vector2 result) {
             if (maxHeight < 0) {
                 return [CreateWrappedText(font, snippets, baseScale, maxWidth)];
             }
@@ -905,14 +955,14 @@ public static partial class TigerUtils {
             List<TextSnippet> page = []; // 页, 原 wrapped
             List<TextSnippet> lineSnippets = []; // 行, 跨行的 snippet 属于最后一行
             Vector2 position = Vector2.Zero;
-            Vector2 positionNow = Vector2.Zero;
-            Vector2 result = Vector2.Zero;
+            Vector2 positionNowInner = positionNow;
+            Vector2 resultInner = result;
             TextSnippet? lastSnippetAddedToPageNonUnique = null; // 如果最后一个加入的 snippet 是 unique 的话那么它会是 null
             bool isLastAddedToLineUnique = false;
             bool isFirstAddedToLineUnique = false;
             TextSnippet snippet = null!;
             float scale = 1;
-            float maxLineHeight = 0;
+            float maxLineHeightInner = maxLineHeightNow;
             bool justNewLine = true;
             int i = 0;
             bool hasPageText = false;
@@ -951,8 +1001,8 @@ public static partial class TigerUtils {
                 }
                 pages.Add(page);
                 page = [];
-                positionNow = position;
-                result = position;
+                positionNowInner = position;
+                resultInner = position;
                 inPageStart = true;
             }
             // 保证 lineTextBuilder 长度为 0
@@ -961,8 +1011,8 @@ public static partial class TigerUtils {
             // 保证 lineSnippets 长度为 0
             void NewLine(bool unique) {
                 // 若超高, 则先换页
-                if (positionNow.Y + maxLineHeight > position.Y + maxHeight) {
-                    if (positionNow.Y != position.Y) {
+                if (positionNowInner.Y + maxLineHeightInner > position.Y + maxHeight) {
+                    if (positionNowInner.Y != position.Y) {
                         NewPage();
                     }
                 }
@@ -1076,8 +1126,8 @@ public static partial class TigerUtils {
             }
             void FinalProcess() {
                 // 若超高, 则先换页
-                if (positionNow.Y + maxLineHeight > position.Y + maxHeight) {
-                    if (positionNow.Y != position.Y) {
+                if (positionNowInner.Y + maxLineHeightInner > position.Y + maxHeight) {
+                    if (positionNowInner.Y != position.Y) {
                         NewPage();
                     }
                 }
@@ -1121,9 +1171,18 @@ public static partial class TigerUtils {
                 pages.Add(page);
             }
             HandleSnippets(font, snippets, position, baseScale, maxWidth,
-                ref positionNow, ref result, ref scale, ref maxLineHeight, ref justNewLine, ref snippet, ref i,
+                ref positionNowInner, ref resultInner, ref scale, ref maxLineHeightInner, ref justNewLine, ref snippet, ref i,
                 NewLine, DrawString, UniqueDraw, AfterUpdateSnippet, PostHandleNonUniqueSnippet, FinalProcess);
+            positionNow = positionNowInner;
+            result = resultInner;
             return pages;
+        }
+        public static List<List<TextSnippet>> CreatePagedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale, float maxWidth, float maxHeight) {
+            Vector2 startPosition = Vector2.Zero;
+            float maxLineHeight = 0;
+            Vector2 result = Vector2.Zero;
+            return CreatePagedText(font, snippets, baseScale, maxWidth, maxHeight,
+                ref startPosition, ref maxLineHeight, ref result);
         }
         public static List<List<TextSnippet>> CreatePagedText(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, float baseScale, Vector2 pageSize) {
             return CreatePagedText(font, snippets, baseScale, pageSize.X, pageSize.Y);
