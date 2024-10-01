@@ -3085,7 +3085,7 @@ public static partial class TigerClasses {
         public float Delta { readonly get => end - start; set => end = start + value; }
         public readonly bool Collide(DirectedLineD1 line) {
             GetRange(out float left, out float right);
-            if (line.Start < left && line.End < right) {
+            if (line.Start < left && line.End < left) {
                 return false;
             }
             if (line.Start > right && line.End > right) {
@@ -3135,6 +3135,31 @@ public static partial class TigerClasses {
                 right = start;
                 reverse = true;
             }
+        }
+        /// <summary>
+        /// <br/>返回两个线段之间的距离
+        /// <br/>如果重合会返回 0
+        /// </summary>
+        public readonly float Distance(DirectedLineD1 line) {
+            GetRange(out float left, out float right);
+            line.GetRange(out float lineLeft, out float lineRight);
+            if (right <= lineLeft) {
+                return lineLeft - right;
+            }
+            if (lineRight < left) {
+                return left - lineRight;
+            }
+            return 0;
+        }
+        public readonly float Distance(float point) {
+            GetRange(out float left, out float right);
+            if (point <= left) {
+                return left - point;
+            }
+            if (point >= right) {
+                return point - right;
+            }
+            return 0;
         }
     }
     public struct DirectedLine(Vector2 start, Vector2 end) {
@@ -3341,6 +3366,9 @@ public static partial class TigerClasses {
                 Height = -Height;
             }
         }
+        /// <summary>
+        /// 返回两个 <see cref="Rect"/> 是否有重合部分, 包括边界
+        /// </summary>
         public readonly bool Collide(Rect rect) {
             var positionDelta = rect.Position - Position;
 
@@ -3369,6 +3397,111 @@ public static partial class TigerClasses {
             }
             return Check(positionDelta.X, Width, rect.Width) && Check(positionDelta.Y, Height, rect.Height);
         }
+        public readonly bool Collide(Circle circle) {
+            var xDistance = new DirectedLineD1(Left, Right).Distance(circle.Center.X);
+            var yDistance = new DirectedLineD1(Top, Bottom).Distance(circle.Center.Y);
+            if (xDistance == 0) {
+                return yDistance <= circle.Radius;
+            }
+            if (yDistance == 0) {
+                return xDistance <= circle.Radius;
+            }
+            return xDistance * xDistance + yDistance * yDistance <= circle.Radius * circle.Radius;
+        }
+        #region Distance
+        public readonly float Distance(Vector2 point) {
+            var xDistance = new DirectedLineD1(Left, Right).Distance(point.X);
+            var yDistance = new DirectedLineD1(Top, Bottom).Distance(point.Y);
+            if (xDistance == 0) {
+                return yDistance;
+            }
+            if (yDistance == 0) {
+                return xDistance;
+            }
+            return MathF.Sqrt(xDistance * xDistance + yDistance * yDistance);
+        }
+        public readonly float DistanceSquared(Vector2 point) {
+            var xDistance = new DirectedLineD1(Left, Right).Distance(point.X);
+            var yDistance = new DirectedLineD1(Top, Bottom).Distance(point.Y);
+            if (xDistance == 0) {
+                return yDistance * yDistance;
+            }
+            if (yDistance == 0) {
+                return xDistance * xDistance;
+            }
+            return xDistance * xDistance + yDistance * yDistance;
+        }
+
+        /// <summary>
+        /// <br/>返回两个 <see cref="Rect"/> 之间的距离
+        /// <br/>如果重合, 会返回 0
+        /// </summary>
+        public readonly float Distance(Rect rect) {
+            var xDistance = new DirectedLineD1(Left, Right).Distance(new DirectedLineD1(rect.Left, rect.Right));
+            var yDistance = new DirectedLineD1(Top, Bottom).Distance(new DirectedLineD1(rect.Top, rect.Bottom));
+            if (xDistance == 0) {
+                return yDistance;
+            }
+            if (yDistance == 0) {
+                return xDistance;
+            }
+            return MathF.Sqrt(xDistance * xDistance + yDistance * yDistance);
+        }
+        public readonly float DistanceSquared(Rect rect) {
+            var xDistance = new DirectedLineD1(Left, Right).Distance(new DirectedLineD1(rect.Left, rect.Right));
+            var yDistance = new DirectedLineD1(Top, Bottom).Distance(new DirectedLineD1(rect.Top, rect.Bottom));
+            if (xDistance == 0) {
+                return yDistance * yDistance;
+            }
+            if (yDistance == 0) {
+                return xDistance * xDistance;
+            }
+            return xDistance * xDistance + yDistance * yDistance;
+        }
+
+        public readonly float Distance(Circle circle) {
+            return (Distance(circle.Center) - circle.Radius).WithMin(0);
+        }
+        #endregion
+    }
+    public struct Circle {
+        public Vector2 Center;
+        private float _radius;
+        public float Radius {
+            readonly get => _radius;
+            set {
+                if (value < 0) {
+                    throw new ArgumentException("radius should not be below 0", nameof(value));
+                }
+                _radius = value;
+            }
+        }
+        public Circle(Vector2 center, float radius) {
+            if (radius < 0) {
+                throw new ArgumentException("radius should not be below 0", nameof(radius));
+            }
+            Center = center;
+            _radius = radius;
+        }
+        public readonly bool Collide(Circle circle) {
+            var radiusSum = Radius + circle.Radius;
+            return Vector2.DistanceSquared(Center, circle.Center) <= radiusSum * radiusSum;
+        }
+        public readonly bool Contains(Vector2 point) {
+            return Vector2.DistanceSquared(Center, point) <= Radius * Radius;
+        }
+
+        #region Distance
+        public readonly float Distance(Vector2 point) {
+            return (Vector2.Distance(Center, point) - Radius).WithMin(0);
+        }
+        public readonly float Distance(Circle circle) {
+            return (Vector2.Distance(Center, circle.Center) - Radius - circle.Radius).WithMin(0);
+        }
+        public readonly float Distance(Rect rect) {
+            return rect.Distance(this);
+        }
+        #endregion
     }
     #endregion
 }
@@ -4840,10 +4973,10 @@ public static partial class TigerExtensions {
     public static void SetLength<T>(this IList<T> list, int length, Func<T> fillValueGetter) {
         int count = list.Count;
         if (count < length) {
-            list.ClampLength(length);
+            list.EnsureLength(length, fillValueGetter);
         }
         else if (count > length) {
-            list.EnsureLength(length, fillValueGetter());
+            list.ClampLength(length);
         }
     }
     #endregion

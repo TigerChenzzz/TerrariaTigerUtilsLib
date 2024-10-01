@@ -142,6 +142,52 @@ public static partial class TigerUtils {
         }
     }
     #endregion
+    #region 物块相关
+    public static void KillWallWithoutItemDrop(int i, int j, bool fail = false, bool sync = false) {
+        // 摘自 WorldGen.KillWall
+        if (i < 0 || j < 0 || i >= Main.maxTilesX || j >= Main.maxTilesY)
+            return;
+
+        Tile tile = Main.tile[i, j];
+        if (tile == null) {
+            tile = new Tile();
+            Main.tile[i, j] = tile;
+        }
+
+        if (tile.wall <= 0)
+            return;
+
+        fail = WorldGen.KillWall_CheckFailure(fail, tile);
+
+        WallLoader.KillWall(i, j, tile.wall, ref fail);
+
+        WorldGen.KillWall_PlaySounds(i, j, tile, fail);
+        int num = 10;
+        if (fail)
+            num = 3;
+
+        WallLoader.NumDust(i, j, tile.wall, fail, ref num);
+
+        for (int k = 0; k < num; k++) {
+            WorldGen.KillWall_MakeWallDust(i, j, tile);
+        }
+
+        if (fail) {
+            WorldGen.SquareWallFrame(i, j);
+            return;
+        }
+
+        // WorldGen.KillWall_DropItems(i, j, tile);
+        tile.wall = 0;
+        tile.ClearWallPaintAndCoating();
+        WorldGen.SquareWallFrame(i, j);
+        if (tile.type >= 0 && TileID.Sets.FramesOnKillWall[tile.type])
+            WorldGen.TileFrame(i, j);
+        if (sync) {
+            NetMessage.SendTileSquare(-1, i, j);
+        }
+    }
+    #endregion
     #region 本地化相关
     public static LocalizedText GetModLocalization(string suffix, Func<string>? makeDefaultValue = null)
         => Language.GetOrRegister(string.Join('.', "Mods", ModName, suffix), makeDefaultValue);
