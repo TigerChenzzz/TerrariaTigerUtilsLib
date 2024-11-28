@@ -522,6 +522,7 @@ public static partial class TigerUtils {
         }
     }
     #endregion
+    #region ApplyOneToOne
     public static int ApplyOneToOne<T1, T2>(Func<IEnumerator<T1>?>? getEnumerator1, Func<IEnumerator<T2>?>? getEnumerator2, Func<T1, T2, bool>? condition, Action<T1, T2>? action, Action<T1>? applyToFail = null) {
 #if false
         //简单暴力待优化
@@ -649,6 +650,21 @@ public static partial class TigerUtils {
     }
     public static int ApplyOneToOne<T1, T2>(IEnumerable<T1>? e1, IList<T2>? list, Func<T1, int> toIndex, Action<T1, T2>? action, Action<T1>? applyToFail = null)
         => ApplyOneToOne(e1 == null ? null : e1.GetEnumerator, list, toIndex, action, applyToFail);
+    #endregion
+    #region EmptyEnumerable, SingleEnumerable
+    public static IEnumerable<T> EmptyEnumerable<T>() {
+        yield break;
+    }
+    public static IEnumerable EmptyEnumerable() {
+        yield break;
+    }
+    public static IEnumerable<T> SingleEnumerable<T>(T t) {
+        yield return t;
+    }
+    public static IEnumerable SingleEnumerable(object? o) {
+        yield return o;
+    }
+    #endregion
     #endregion
     #region Random
     public static class MyRandom {
@@ -1154,7 +1170,9 @@ public static partial class TigerUtils {
     }
     #endregion
     #endregion
-    #region Min / Max带有多个值
+    #region Min / Max (包括带有多个值)
+    public static T Min<T>(T a, T b) where T : IComparable<T> => a.CompareTo(b) > 0 ? b : a;
+    public static T Max<T>(T a, T b) where T : IComparable<T> => a.CompareTo(b) < 0 ? b : a;
     public static T Min<T>(T a, T b, params T[] others) where T : IComparable<T> {
         T result = a;
         if (result.CompareTo(b) > 0) {
@@ -1187,6 +1205,7 @@ public static partial class TigerUtils {
         => new((int)(x - anchorX * width), (int)(y - anchorY * height), width, height);
     public static Rectangle NewRectangle(float x, float y, float width, float height, float anchorX, float anchorY)
         => new((int)(x - anchorX * width), (int)(y - anchorY * height), (int)width, (int)height);
+    public static Rectangle NewRectangle(float x, float y, float width, float height) => new((int)x, (int)y, (int)width, (int)height);
     #endregion
     #region 流程简化
     #region Do
@@ -2417,7 +2436,13 @@ public static partial class TigerUtils {
     public static bool LesserEqualN1(int a, int b) => b == -1 || a != -1 && a <= b;
     public static int MaxN1(int a, int b) => a == -1 || b == -1 ? -1 : a >= b ? a : b;
     public static int MinN1(int a, int b) => a == -1 ? b : b == -1 ? a : a <= b ? a : b;
+    /// <summary>
+    /// 按照 uint 比较
+    /// </summary>
     public static int MaxU(int a, int b) => ((uint)a >= (uint)b) ? a : b;
+    /// <summary>
+    /// 按照 uint 比较
+    /// </summary>
     public static int MinU(int a, int b) => ((uint)a <= (uint)b) ? a : b;
     #endregion
     #region 一些简单的委托
@@ -2442,25 +2467,25 @@ public static partial class TigerUtils {
     #endregion
     #region 委托的运算
     #region And
-    public static Func<bool> Add(Func<bool> left, Func<bool> right)
+    public static Func<bool> And(Func<bool> left, Func<bool> right)
         => () => left() && right();
-    public static Func<T, bool> Add<T>(Func<T, bool> left, Func<T, bool> right)
+    public static Func<T, bool> And<T>(Func<T, bool> left, Func<T, bool> right)
         => t => left(t) && right(t);
-    public static Func<T1, T2, bool> Add<T1, T2>(Func<T1, T2, bool> left, Func<T1, T2, bool> right)
+    public static Func<T1, T2, bool> And<T1, T2>(Func<T1, T2, bool> left, Func<T1, T2, bool> right)
         => (t1, t2) => left(t1, t2) && right(t1, t2);
-    public static Func<T1, T2, T3, bool> Add<T1, T2, T3>(Func<T1, T2, T3, bool> left, Func<T1, T2, T3, bool> right)
+    public static Func<T1, T2, T3, bool> And<T1, T2, T3>(Func<T1, T2, T3, bool> left, Func<T1, T2, T3, bool> right)
         => (t1, t2, t3) => left(t1, t2, t3) && right(t1, t2, t3);
-    public static Func<T1, T2, T3, T4, bool> Add<T1, T2, T3, T4>(Func<T1, T2, T3, T4, bool> left, Func<T1, T2, T3, T4, bool> right)
+    public static Func<T1, T2, T3, T4, bool> And<T1, T2, T3, T4>(Func<T1, T2, T3, T4, bool> left, Func<T1, T2, T3, T4, bool> right)
         => (t1, t2, t3, t4) => left(t1, t2, t3, t4) && right(t1, t2, t3, t4);
-    public static Func<T1, T2, T3, T4, T5, bool> Add<T1, T2, T3, T4, T5>(Func<T1, T2, T3, T4, T5, bool> left, Func<T1, T2, T3, T4, T5, bool> right)
+    public static Func<T1, T2, T3, T4, T5, bool> And<T1, T2, T3, T4, T5>(Func<T1, T2, T3, T4, T5, bool> left, Func<T1, T2, T3, T4, T5, bool> right)
         => (t1, t2, t3, t4, t5) => left(t1, t2, t3, t4, t5) && right(t1, t2, t3, t4, t5);
-    public static Func<T1, T2, T3, T4, T5, T6, bool> Add<T1, T2, T3, T4, T5, T6>(Func<T1, T2, T3, T4, T5, T6, bool> left, Func<T1, T2, T3, T4, T5, T6, bool> right)
+    public static Func<T1, T2, T3, T4, T5, T6, bool> And<T1, T2, T3, T4, T5, T6>(Func<T1, T2, T3, T4, T5, T6, bool> left, Func<T1, T2, T3, T4, T5, T6, bool> right)
         => (t1, t2, t3, t4, t5, t6) => left(t1, t2, t3, t4, t5, t6) && right(t1, t2, t3, t4, t5, t6);
-    public static Func<T1, T2, T3, T4, T5, T6, T7, bool> Add<T1, T2, T3, T4, T5, T6, T7>(Func<T1, T2, T3, T4, T5, T6, T7, bool> left, Func<T1, T2, T3, T4, T5, T6, T7, bool> right)
+    public static Func<T1, T2, T3, T4, T5, T6, T7, bool> And<T1, T2, T3, T4, T5, T6, T7>(Func<T1, T2, T3, T4, T5, T6, T7, bool> left, Func<T1, T2, T3, T4, T5, T6, T7, bool> right)
         => (t1, t2, t3, t4, t5, t6, t7) => left(t1, t2, t3, t4, t5, t6, t7) && right(t1, t2, t3, t4, t5, t6, t7);
-    public static Func<T1, T2, T3, T4, T5, T6, T7, T8, bool> Add<T1, T2, T3, T4, T5, T6, T7, T8>(Func<T1, T2, T3, T4, T5, T6, T7, T8, bool> left, Func<T1, T2, T3, T4, T5, T6, T7, T8, bool> right)
+    public static Func<T1, T2, T3, T4, T5, T6, T7, T8, bool> And<T1, T2, T3, T4, T5, T6, T7, T8>(Func<T1, T2, T3, T4, T5, T6, T7, T8, bool> left, Func<T1, T2, T3, T4, T5, T6, T7, T8, bool> right)
         => (t1, t2, t3, t4, t5, t6, t7, t8) => left(t1, t2, t3, t4, t5, t6, t7, t8) && right(t1, t2, t3, t4, t5, t6, t7, t8);
-    public static Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, bool> Add<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, bool> left, Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, bool> right)
+    public static Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, bool> And<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, bool> left, Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, bool> right)
         => (t1, t2, t3, t4, t5, t6, t7, t8, t9) => left(t1, t2, t3, t4, t5, t6, t7, t8, t9) && right(t1, t2, t3, t4, t5, t6, t7, t8, t9);
     #endregion
     #region Or
@@ -2804,9 +2829,9 @@ public static partial class TigerUtils {
     
     public delegate ref TValue RefStaticMemberGetter<TValue>();
 
-    public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<T, TField>(string fieldName, BindingFlags flags = bfpni)
+    public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<T, TField>(string fieldName, BindingFlags flags = bfpns)
         => GetGetStaticRefFieldDelegate<TField>(typeof(T).GetField(fieldName, flags)!);
-    public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = bfpni)
+    public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = bfpns)
         => GetGetStaticRefFieldDelegate<TField>(type.GetField(fieldName, flags)!);
 
     public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<TField>(FieldInfo field) {
@@ -2827,9 +2852,9 @@ public static partial class TigerUtils {
         return property.GetMethod!.CreateDelegate<Func<T, TProperty>>();
     }
 
-    public static Func<TProperty> GetGetStaticPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = bfpni)
+    public static Func<TProperty> GetGetStaticPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = bfpns)
         => GetGetStaticPropertyDelegate<TProperty>(typeof(T), propertyName, flags);
-    public static Func<TProperty> GetGetStaticPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = bfpni)
+    public static Func<TProperty> GetGetStaticPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = bfpns)
         => GetGetStaticPropertyDelegate<TProperty>(type.GetProperty(propertyName, flags)!);
     public static Func<TProperty> GetGetStaticPropertyDelegate<TProperty>(PropertyInfo property) {
         return property.GetMethod!.CreateDelegate<Func<TProperty>>();
@@ -2842,9 +2867,9 @@ public static partial class TigerUtils {
         return property.SetMethod!.CreateDelegate<Action<T, TProperty>>();
     }
 
-    public static Action<TProperty> GetSetStaticPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = bfpni)
+    public static Action<TProperty> GetSetStaticPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = bfpns)
         => GetSetStaticPropertyDelegate<TProperty>(typeof(T), propertyName, flags);
-    public static Action<TProperty> GetSetStaticPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = bfpni)
+    public static Action<TProperty> GetSetStaticPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = bfpns)
         => GetSetStaticPropertyDelegate<TProperty>(type.GetProperty(propertyName, flags)!);
     public static Action<TProperty> GetSetStaticPropertyDelegate<TProperty>(PropertyInfo property) {
         return property.SetMethod!.CreateDelegate<Action<TProperty>>();
@@ -2891,14 +2916,8 @@ public static partial class TigerUtils {
     public static IEqualityComparer<T> NewEqualityComparer<T>(Func<T?, T?, bool> equals, Func<T, int> getHashCode) {
         return new CustomEqualityComparer<T>(equals, getHashCode);
     }
-    public class CustomEqualityComparer<T>(Func<T?, T?, bool> equals, Func<T, int> getHashCode) : IEqualityComparer<T> {
-        public bool Equals(T? x, T? y) => equals(x, y);
-        public int GetHashCode([DisallowNull] T obj) => getHashCode(obj);
-    }
     public static IComparer<T> NewComparer<T>(Func<T?, T?, int> compare) => new CustomComparer<T>(compare);
-    public class CustomComparer<T>(Func<T?, T?, int> compare) : IComparer<T> {
-        public int Compare(T? x, T? y) => compare(x, y);
-    }
+    public static int ToInt(bool @bool) => @bool ? 1 : 0;
     #endregion
 }
 
@@ -3069,8 +3088,26 @@ public static partial class TigerClasses {
     /// </summary>
     public class Identifier { }
     public static class StaticInstance<T> {
-        public static T Value { get; private set; } = (T)Activator.CreateInstance(typeof(T))!;
-        public static void Set(T value) => Value = value;
+        private static bool hasValue;
+        private static T? value;
+        public static T Value {
+            get {
+                if (hasValue) {
+                    return value!;
+                }
+                value = (T)Activator.CreateInstance(typeof(T))!;
+                if (value == null) {
+                    throw new Exception("cannot create instance of type: " + typeof(T).FullName);
+                }
+                hasValue = true;
+                return value;
+            }
+        }
+        public static void Set(T value) => StaticInstance<T>.value = value;
+        public static void Clear(T? defaultValue = default) {
+            hasValue = false;
+            value = defaultValue;
+        }
     }
     #region Delegate
     public delegate T Alter<T>(T source);
@@ -3083,16 +3120,42 @@ public static partial class TigerClasses {
         public float Start { readonly get => start; set => start = value; }
         public float End { readonly get => end; set => end = value; }
         public float Delta { readonly get => end - start; set => end = start + value; }
-        public readonly bool Collide(DirectedLineD1 line) {
+        public readonly bool Collide(float point) {
             GetRange(out float left, out float right);
-            if (line.Start < left && line.End < left) {
+            return left <= point && point <= right;
+        }
+        public readonly bool CollideI(float point) {
+            GetRange(out float left, out float right);
+            return left < point && point < right;
+        }
+        /// <summary>
+        /// 自动处理 <paramref name="start"/> 和 <paramref name="end"/> 的大小关系
+        /// </summary>
+        public readonly bool Collide(float start, float end) {
+            GetRange(out float left, out float right);
+            if (start < left && end < left) {
                 return false;
             }
-            if (line.Start > right && line.End > right) {
+            if (start > right && end > right) {
                 return false;
             }
             return true;
         }
+        /// <summary>
+        /// 自动处理 <paramref name="start"/> 和 <paramref name="end"/> 的大小关系
+        /// </summary>
+        public readonly bool CollideI(float start, float end) {
+            GetRange(out float left, out float right);
+            if (start <= left && end <= left) {
+                return false;
+            }
+            if (start >= right && end >= right) {
+                return false;
+            }
+            return true;
+        }
+        public readonly bool Collide(DirectedLineD1 line) => Collide(line.Start, line.End);
+        public readonly bool CollideI(DirectedLineD1 line) => CollideI(line.Start, line.End);
         public readonly DirectedLineD1? GetCollideRange(DirectedLineD1 line) {
             GetRange(out float left, out float right);
             line.GetRange(out float lineLeft, out float lineRight);
@@ -3169,12 +3232,107 @@ public static partial class TigerClasses {
         public Vector2 End { readonly get => end; set => end = value; }
         public Vector2 Delta { readonly get => end - start; set => end = start + value; }
 
+        public readonly bool Collide(Rect rect) {
+            DirectedLine? cutX = CutByX(rect.Left, rect.Right);
+            if (cutX == null)
+                return false;
+            DirectedLineD1 line = new(cutX.Value.Start.Y, cutX.Value.End.Y);
+            return line.Collide(rect.Top, rect.Bottom);
+        }
+        public readonly bool CollideI(Rect rect) {
+            DirectedLine? cutX = CutByX(rect.Left, rect.Right);
+            if (cutX == null)
+                return false;
+            DirectedLineD1 line = new(cutX.Value.Start.Y, cutX.Value.End.Y);
+            return line.CollideI(rect.Top, rect.Bottom);
+        }
+        public readonly bool Collide(Circle circle) {
+            if (circle.Contains(Start) || circle.Contains(End)) {
+                return true;
+            }
+            // 线段为 (x1, y1) - (x2, y2), 圆心为 (xc, yc), 半径 r
+            // 线段方程为 P(t) = (x1, y1) + t⋅(x2 - x1, y2 - y1), 0 <= t <= 1
+            // 圆方程为 (x - xc)^2 + (y - yc)^2 = r^2
+            // 带入得 ((x1 - xc) + t⋅(x2 - x1))^2 + ((y1 - yc) + t⋅(y2 - y1))^2 = r^2
+            // 展开得到 A⋅t^2 + B⋅t + C = 0
+            // 其中
+            // A = (x2 - x1)^2 + (y2 - y1)^2
+            // B = 2 ⋅ ((x2 - x1)(x1 - xc) + (y2 - y1)(y1 - yc))
+            // C = (x1 - xc)^2 + (y1 - yc)^2 - r^2
+            // 只要至少有一个解在 [0, 1] 中则圆和线段相交
+            float dx = End.X - Start.X;
+            float dy = End.Y - Start.Y;
+            float fx = Start.X - circle.Center.X;
+            float fy = Start.Y - circle.Center.Y;
+            float a = dx * dx + dy * dy;
+            float b = 2 * (fx * dx + fy * dy);
+            float c = fx * fx + fy + fy - circle.Radius * circle.Radius;
+            float discriminant = b * b - 4 * a * c;
+            if (discriminant < 0)
+                return false;
+            float sqrtDisc = MathF.Sqrt(discriminant);
+            float t1 = (-b - sqrtDisc) / (2 * a);
+            float t2 = (-b + sqrtDisc) / (2 * a);
+            return t1 >= 0 && t1 <= 1 || t2 >= 0 && t2 <= 1;
+        }
+        public readonly bool CollideI(Circle circle) {
+            if (circle.ContainsI(Start) || circle.ContainsI(End)) {
+                return true;
+            }
+            float dx = End.X - Start.X;
+            float dy = End.Y - Start.Y;
+            float fx = Start.X - circle.Center.X;
+            float fy = Start.Y - circle.Center.Y;
+            float a = dx * dx + dy * dy;
+            float b = 2 * (fx * dx + fy * dy);
+            float c = fx * fx + fy + fy - circle.Radius * circle.Radius;
+            float discriminant = b * b - 4 * a * c;
+            if (discriminant <= 0)
+                return false;
+            float sqrtDisc = MathF.Sqrt(discriminant);
+            float t1 = (-b - sqrtDisc) / (2 * a);
+            float t2 = (-b + sqrtDisc) / (2 * a);
+            return t1 > 0 && t1 < 1 || t2 > 0 && t2 < 1;
+        }
+        public readonly bool CollideO(Circle circle) {
+            float dx = End.X - Start.X;
+            float dy = End.Y - Start.Y;
+            float fx = Start.X - circle.Center.X;
+            float fy = Start.Y - circle.Center.Y;
+            float a = dx * dx + dy * dy;
+            float b = 2 * (fx * dx + fy * dy);
+            float c = fx * fx + fy + fy - circle.Radius * circle.Radius;
+            float discriminant = b * b - 4 * a * c;
+            if (discriminant < 0)
+                return false;
+            float sqrtDisc = MathF.Sqrt(discriminant);
+            float t1 = (-b - sqrtDisc) / (2 * a);
+            float t2 = (-b + sqrtDisc) / (2 * a);
+            return t1 >= 0 && t1 <= 1 || t2 >= 0 && t2 <= 1;
+        }
+        public readonly bool CollideOI(Circle circle) {
+            float dx = End.X - Start.X;
+            float dy = End.Y - Start.Y;
+            float fx = Start.X - circle.Center.X;
+            float fy = Start.Y - circle.Center.Y;
+            float a = dx * dx + dy * dy;
+            float b = 2 * (fx * dx + fy * dy);
+            float c = fx * fx + fy + fy - circle.Radius * circle.Radius;
+            float discriminant = b * b - 4 * a * c;
+            if (discriminant <= 0)
+                return false;
+            float sqrtDisc = MathF.Sqrt(discriminant);
+            float t1 = (-b - sqrtDisc) / (2 * a);
+            float t2 = (-b + sqrtDisc) / (2 * a);
+            return t1 > 0 && t1 < 1 || t2 > 0 && t2 < 1;
+        }
+
         /// <summary>
         /// 得到有向线段与一个矩形碰撞的结果
         /// 若返回 null 则代表没有碰撞
         /// </summary>
         public readonly Vector2? GetCollidePosition(Rect rect) {
-            DirectedLine? cutQ = CutByX(new DirectedLineD1(rect.Left, rect.Right));
+            DirectedLine? cutQ = CutByX(rect.Left, rect.Right);
             if (cutQ == null) {
                 return null;
             }
@@ -3337,21 +3495,35 @@ public static partial class TigerClasses {
             float k = (end.X - start.X) / (end.Y - start.Y);
             return k * (y - start.Y) + start.X;
         }
-    }
-    public struct Rect(Vector2 position, Vector2 size) {
-        public Rect(float x, float y, float width, float height) : this(new Vector2(x, y), new Vector2(width, height)) { }
-        public Vector2 Position { readonly get => position; set => position = value; }
-        public Vector2 Size { readonly get => size; set => size = value; }
-        public float X { readonly get => position.X; set => position.X = value; }
-        public float Y { readonly get => position.Y; set => position.Y = value; }
-        public float Width { readonly get => size.X; set => size.X = value; }
-        public float Height { readonly get => size.Y; set => size.Y = value; }
-        public float Left { readonly get => position.X; set => position.X = value; }
-        public float Right { readonly get => position.X + size.X; set => position.X = value - size.X; }
-        public float Top { readonly get => position.Y; set => position.Y = value; }
-        public float Bottom { readonly get => position.Y + size.Y; set => position.Y = value - size.Y; }
 
-        public Vector2 Center { readonly get => position + size / 2; set => position = value - size / 2; }
+        public static implicit operator DirectedLine((Vector2, Vector2) tuple) {
+            return new(tuple.Item1, tuple.Item2);
+        }
+    }
+    /// <summary>
+    /// 代表一个矩形, 允许长和宽为负数
+    /// </summary>
+    public struct Rect(float x, float y, float width, float height) {
+        public Rect(Vector2 position, Vector2 size) : this(position.X, position.Y, size.X, size.Y) { }
+        public Vector2 Position { readonly get => new(x, y); set => (x, y) = value; }
+        public Vector2 Size { readonly get => new(width, height); set => (width, height) = value; }
+        public float X { readonly get => x; set => x = value; }
+        public float Y { readonly get => y; set => y = value; }
+        public float Width { readonly get => width; set => width = value; }
+        public float Height { readonly get => height; set => height = value; }
+        public float Left { readonly get => x; set => x = value; }
+        public float Right { readonly get => x + width; set => x = value - width; }
+        public float Top { readonly get => y; set => y = value; }
+        public float Bottom { readonly get => y + height; set => y = value - height; }
+        public Vector2 RealSize { readonly get => new(RealWidth, RealHeight); set => (RealWidth, RealHeight) = value; }
+        public float RealWidth { readonly get => MathF.Abs(width); set => width = ToInt(width >= 0) * value; }
+        public float RealHeight { readonly get => MathF.Abs(height); set => height = ToInt(height >= 0) * value; }
+        public float RealLeft { readonly get => width >= 0 ? x : (x + width); set => x = width >= 0 ? value : (value - width); }
+        public float RealRight { readonly get => width <= 0 ? x : (x + width); set => x = width <= 0 ? value : (value - width); }
+        public float RealTop { readonly get => height >= 0 ? y : (y + height); set => y = height >= 0 ? value : (value - height); }
+        public float RealBottom { readonly get => height <= 0 ? y : (y + height); set => y = height <= 0 ? value : (value - height); }
+
+        public Vector2 Center { readonly get => new(x + width / 2, y + height / 2); set => (x, y) = (value.X - width / 2, value.Y - height / 2); }
 
         /// <summary>
         /// 让 <see cref="Width"/> 与 <see cref="Height"/> 保持非负
@@ -3366,6 +3538,38 @@ public static partial class TigerClasses {
                 Height = -Height;
             }
         }
+        public Rect MakePositiveL() {
+            MakePositive();
+            return this;
+        }
+        public readonly void GetRange(out float left, out float right, out float top, out float bottom) {
+            if (Width >= 0) {
+                left = Left;
+                right = Right;
+            }
+            else {
+                left = Right;
+                right = Left;
+            }
+            if (Height >= 0) {
+                top = Top;
+                bottom = Bottom;
+            }
+            else {
+                top = Bottom;
+                bottom = top;
+            }
+        }
+        public readonly bool Collide(Vector2 point) {
+            GetRange(out float left, out float right, out float top, out float bottom);
+            return point.X >= left && point.X <= right && point.Y >= top && point.Y <= bottom;
+        }
+        public readonly bool CollideI(Vector2 point) {
+            GetRange(out float left, out float right, out float top, out float bottom);
+            return point.X > left && point.X < right && point.Y > top && point.Y < bottom;
+        }
+        public readonly bool Collide(DirectedLine line) => line.Collide(this);
+        public readonly bool CollideI(DirectedLine line) => line.CollideI(this);
         /// <summary>
         /// 返回两个 <see cref="Rect"/> 是否有重合部分, 包括边界
         /// </summary>
@@ -3397,6 +3601,31 @@ public static partial class TigerClasses {
             }
             return Check(positionDelta.X, Width, rect.Width) && Check(positionDelta.Y, Height, rect.Height);
         }
+        public readonly bool CollideI(Rect rect) {
+            var positionDelta = rect.Position - Position;
+
+            static bool CheckI(float delta, float x1, float x2) {
+                // delta 为一维空间中两线段起点的差值
+                // x1 为第一条线段的长度
+                // x2 为第二条线段的长度
+                // 返回两线段是否有重合区域
+                if (delta < 0) {
+                    delta = -delta;
+                    x1 = -x1;
+                }
+                else if (delta > 0) {
+                    x2 = -x2;
+                }
+                if (x1 <= 0) {
+                    return x2 > delta;
+                }
+                if (x2 <= 0) {
+                    return x1 > delta;
+                }
+                return x1 + x2 > delta;
+            }
+            return CheckI(positionDelta.X, Width, rect.Width) && CheckI(positionDelta.Y, Height, rect.Height);
+        }
         public readonly bool Collide(Circle circle) {
             var xDistance = new DirectedLineD1(Left, Right).Distance(circle.Center.X);
             var yDistance = new DirectedLineD1(Top, Bottom).Distance(circle.Center.Y);
@@ -3407,6 +3636,20 @@ public static partial class TigerClasses {
                 return xDistance <= circle.Radius;
             }
             return xDistance * xDistance + yDistance * yDistance <= circle.Radius * circle.Radius;
+        }
+        public readonly bool CollideI(Circle circle) {
+            if (circle.Radius <= 0) {
+                return CollideI(circle.Center);
+            }
+            var xDistance = new DirectedLineD1(Left, Right).Distance(circle.Center.X);
+            var yDistance = new DirectedLineD1(Top, Bottom).Distance(circle.Center.Y);
+            if (xDistance == 0) {
+                return yDistance < circle.Radius;
+            }
+            if (yDistance == 0) {
+                return xDistance < circle.Radius;
+            }
+            return xDistance * xDistance + yDistance * yDistance < circle.Radius * circle.Radius;
         }
         #region Distance
         public readonly float Distance(Vector2 point) {
@@ -3463,9 +3706,14 @@ public static partial class TigerClasses {
             return (Distance(circle.Center) - circle.Radius).WithMin(0);
         }
         #endregion
+
+        public static implicit operator Rectangle(Rect rect) => NewRectangle(rect.X, rect.Y, rect.Width, rect.Height);
+        public static implicit operator Rect(Rectangle rectangle) => new(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
     }
     public struct Circle {
-        public Vector2 Center;
+        public float CenterX { readonly get; set; }
+        public float CenterY { readonly get; set; }
+        public Vector2 Center { readonly get => new(CenterX, CenterY); set => (CenterX, CenterY) = value; }
         private float _radius;
         public float Radius {
             readonly get => _radius;
@@ -3476,21 +3724,50 @@ public static partial class TigerClasses {
                 _radius = value;
             }
         }
-        public Circle(Vector2 center, float radius) {
+        public Circle(float centerX, float centerY, float radius) {
             if (radius < 0) {
                 throw new ArgumentException("radius should not be below 0", nameof(radius));
             }
-            Center = center;
+            CenterX = centerX;
+            CenterY = centerY;
             _radius = radius;
         }
+        public Circle(Vector2 center, float radius) : this(center.X, center.Y, radius) { }
+        /// <summary>
+        /// 外切矩形
+        /// </summary>
+        public readonly Rect EnclosingRect => new(CenterX - Radius, CenterY - Radius, 2 * Radius, 2 * Radius);
+        #region Collide
+        public readonly bool Collide(Vector2 point) {
+            return Vector2.DistanceSquared(Center, point) <= Radius * Radius;
+        }
+        public readonly bool CollideI(Vector2 point) {
+            return Vector2.DistanceSquared(Center, point) < Radius * Radius;
+        }
+        public readonly bool CollideO(Vector2 point) {
+            return Vector2.DistanceSquared(Center, point) == Radius * Radius;
+        }
+        public readonly bool Collide(DirectedLine line) => line.Collide(this);
+        public readonly bool CollideI(DirectedLine line) => line.CollideI(this);
+        public readonly bool CollideO(DirectedLine line) => line.CollideO(this);
+        public readonly bool CollideOI(DirectedLine line) => line.CollideOI(this);
         public readonly bool Collide(Circle circle) {
             var radiusSum = Radius + circle.Radius;
             return Vector2.DistanceSquared(Center, circle.Center) <= radiusSum * radiusSum;
         }
+        public readonly bool CollideI(Circle circle) {
+            var radiusSum = Radius + circle.Radius;
+            return Vector2.DistanceSquared(Center, circle.Center) < radiusSum * radiusSum;
+        }
+        public readonly bool Collide(Rect rect) => rect.Collide(this);
+        public readonly bool CollideI(Rect rect) => rect.CollideI(this);
         public readonly bool Contains(Vector2 point) {
             return Vector2.DistanceSquared(Center, point) <= Radius * Radius;
         }
-
+        public readonly bool ContainsI(Vector2 point) {
+            return Vector2.DistanceSquared(Center, point) < Radius * Radius;
+        }
+        #endregion
         #region Distance
         public readonly float Distance(Vector2 point) {
             return (Vector2.Distance(Center, point) - Radius).WithMin(0);
@@ -3502,6 +3779,15 @@ public static partial class TigerClasses {
             return rect.Distance(this);
         }
         #endregion
+    }
+    #endregion
+    #region 杂项
+    public class CustomEqualityComparer<T>(Func<T?, T?, bool> equals, Func<T, int> getHashCode) : IEqualityComparer<T> {
+        public bool Equals(T? x, T? y) => equals(x, y);
+        public int GetHashCode([DisallowNull] T obj) => getHashCode(obj);
+    }
+    public class CustomComparer<T>(Func<T?, T?, int> compare) : IComparer<T> {
+        public int Compare(T? x, T? y) => compare(x, y);
     }
     #endregion
 }
@@ -3682,6 +3968,24 @@ public static partial class TigerExtensions {
     /// </summary>
     public static bool IsBetween<T>(this T self, T left, T right) where T : IComparable<T>
         => self.CompareTo(left) >= 0 && self.CompareTo(right) < 0;
+    /// <summary>
+    /// 返回 <paramref name="left"/> &lt; <paramref name="self"/> &amp;&amp; <paramref name="self"/> &lt; <paramref name="right"/>
+    /// </summary>
+    public static bool IsBetweenI<T>(this T self, T left, T right) where T : IComparable<T>
+        => self.CompareTo(left) > 0 && self.CompareTo(right) < 0;
+    /// <summary>
+    /// <br/>返回 <paramref name="self"/> 是否处于 <paramref name="left"/> 和 <paramref name="right"/> 构成的开区间中
+    /// <br/>自动比较 <paramref name="left"/> 和 <paramref name="right"/> 的大小
+    /// </summary>
+    public static bool IsBetweenIS<T>(this T self, T left, T right) where T : IComparable<T>
+        => left.CompareTo(right) < 0
+        ? self.CompareTo(left) > 0 && self.CompareTo(right) < 0
+        : self.CompareTo(right) > 0 && self.CompareTo(left) < 0;
+    /// <summary>
+    /// 返回 <paramref name="left"/> &lt;= <paramref name="self"/> &amp;&amp; <paramref name="self"/> &lt;= <paramref name="right"/>
+    /// </summary>
+    public static bool IsBetweenO<T>(this T self, T left, T right) where T : IComparable<T>
+        => self.CompareTo(left) >= 0 && self.CompareTo(right) <= 0;
     #endregion
 
     #region 反射
@@ -3735,6 +4039,17 @@ public static partial class TigerExtensions {
          => new VariableDefinition(il.Method.DeclaringType.Module.ImportReference(type)).WithAction(il.Body.Variables.Add);
     #endregion
 
+    #region Vector2  拓展
+    public static Vector2 ClampDistance(this Vector2 self, Vector2 origin, float distance) {
+        return distance <= 0 ? origin :
+            Vector2.DistanceSquared(self, origin) <= distance * distance ? self :
+            origin + (self - origin).SafeNormalize(Vector2.Zero) * distance;
+    }
+    private static Vector2 SafeNormalize(this Vector2 self, Vector2 defaultValue = default) {
+        return self == Vector2.Zero || self.HasNaNs() ? defaultValue : Vector2.Normalize(self);
+    }
+    private static bool HasNaNs(this Vector2 vec) => float.IsNaN(vec.X) || float.IsNaN(vec.Y);
+    #endregion
     #region IEnumerable拓展
     #region Foreach
     /// <summary>
@@ -3923,6 +4238,34 @@ public static partial class TigerExtensions {
     }
     public static IEnumerator<int> GetEnumerator(this int i)
         => Range(i).GetEnumerator();
+    [return: NotNullIfNotNull(nameof(defaultValue))]
+    public static TResult? SelectFirstOrDefault<TSource, TResult>(this IEnumerable<TSource> enumerable, Func<TSource, TResult> selector, TResult? defaultValue = default) {
+        foreach (var t in enumerable) {
+            return selector(t);
+        }
+        return defaultValue;
+    }
+    [return: NotNullIfNotNull(nameof(defaultValue))]
+    public static TResult? SelectFirstOrDefault<TSource, TResult>(this IEnumerable<TSource> enumerable, Func<TSource, ValueHolder<TResult>?> selector, TResult? defaultValue = default) {
+        foreach (var t in enumerable) {
+            var value = selector(t);
+            if (value != null) {
+                return value;
+            }
+        }
+        return defaultValue;
+    }
+    [return: NotNullIfNotNull(nameof(defaultValue))]
+    public static TResult? SelectFirstNotNullOrDefault<TSource, TResult>(this IEnumerable<TSource> enumerable, Func<TSource, TResult?> selector, TResult? defaultValue = default) {
+        foreach (var t in enumerable) {
+            var value = selector(t);
+            if (value != null) {
+                return value;
+            }
+        }
+        return defaultValue;
+    }
+
     /// <summary>
     /// 找到了则返回索引, 否则返回 -1
     /// </summary>
@@ -3945,6 +4288,14 @@ public static partial class TigerExtensions {
             i += 1;
         }
         return -1;
+    }
+
+    public static IEnumerable SelectMany<TSource>(this IEnumerable<TSource> enumerable, Func<TSource, IEnumerable> selector) {
+        foreach (var t in enumerable) {
+            foreach (var o in selector(t)) {
+                yield return o;
+            }
+        }
     }
     #endregion
     #region 数组和列表相关

@@ -641,7 +641,7 @@ public static partial class TigerUtils {
                 }
 
                 string[] lines = snippet.Text.Split('\n'); // array
-                                                               // string[] array2 = array;
+                                                           // string[] array2 = array;
                 for (int j = 0; j < lines.Length; j++) {
                     string[] words = lines[j].Split(' '); // array3
                     for (int k = 0; k < words.Length; k++) {
@@ -1168,7 +1168,7 @@ public static partial class TigerUtils {
                     lineStartTextBuilder.Append(lineTextBuilder);
                     lineTextBuilder.Clear();
                 }
-                
+
             }
             void FinalProcess() {
                 // 若超高, 则先换页
@@ -1278,7 +1278,7 @@ public static partial class TigerUtils {
                 positionNow.X += size.X;
                 Debug.Assert(size.Y >= font.LineSpacing);
                 maxLineHeight.ClampMinTo(size.Y);
-                
+
             }
             #endregion
             foreach (var snip in snippets) {
@@ -1408,7 +1408,7 @@ public static partial class TigerUtils {
     /// </summary>
     public static bool IsTMLInDeveloperMode => ModCompile.DeveloperMode;
     #endregion
-    public static T TMLInstance<T>() where T : class => ContentInstance<T>.Instance;
+    public static T TMLInstance<T>() where T : class => ContentInstance<T>.Instance; // ModContent.GetInstance<T>()
     #region TextureFromColors
     public static Texture2D TextureFromColors(int width, int height, Color[] colors) {
         return DoOnMainThread(() => TextureFromColorsInner(width, height, colors));
@@ -1475,12 +1475,12 @@ public static partial class TigerUtils {
     /// </summary>
     public static void SaveAndQuit() {
         // 摘自 Terraria.IngameOptions.Draw 中 Lang.inter[35] ("保存并退出") 相关的部分
-		SteamedWraps.StopPlaytimeTracking();
-		SystemLoader.PreSaveAndQuit();
+        SteamedWraps.StopPlaytimeTracking();
+        SystemLoader.PreSaveAndQuit();
         IngameOptions.Close();
-		Main.menuMode = 10;
-		Main.gameMenu = true;
-		WorldGen.SaveAndQuit();
+        Main.menuMode = 10;
+        Main.gameMenu = true;
+        WorldGen.SaveAndQuit();
     }
     #region Main.SetMouseWorld
     public static void Main_SetMouseWorld(Vector2 mouseWorld) {
@@ -2385,6 +2385,21 @@ public static partial class TigerExtensions {
     }
     #endregion
     #endregion
+    #region Tile
+    /// <summary>
+    /// 返回 <see cref="Tile.HasTile"/> &amp;&amp; !<see cref="Tile.IsActuated"/>
+    /// </summary>
+    public static bool IsCollidable(this Tile tile) => tile.HasTile && !tile.IsActuated;
+    /// <summary>
+    /// 不算 SolidTop
+    /// </summary>
+    public static bool IsSolid(this Tile tile) {
+        return tile.IsCollidable() && Main.tileSolid[tile.TileType] && !Main.tileSolidTop[tile.TileType];
+    }
+    public static bool IsSolidTop(this Tile tile) {
+        return tile.IsCollidable() && Main.tileSolidTop[tile.TileType] && tile.TileFrameY == 0;
+    }
+    #endregion
     #region UnifiedRandom
     public static double NextDouble(this UnifiedRandom rand, double maxValue) => rand.NextDouble() * maxValue;
     public static double NextDouble(this UnifiedRandom rand, double minValue, double maxValue) => rand.NextDouble() * (maxValue - minValue) + minValue;
@@ -2410,7 +2425,7 @@ public static partial class TigerExtensions {
     #region 几何
     public static Vector2? GetCollidePositionWithTile(this DirectedLine line, bool ignoreSolidTop = false) {
         var delta = line.Delta;
-        foreach (var (tileX, tileY) in line.GetPassingTiles()) {
+        foreach (var (tileX, tileY) in line.GetPassingTilesCoordinate()) {
             var tileRect = Main.tile[tileX, tileY].GetRect(tileX, tileY, delta, ignoreSolidTop);
             if (tileRect == null) {
                 continue;
@@ -2422,7 +2437,15 @@ public static partial class TigerExtensions {
         }
         return null;
     }
-    public static IEnumerable<(int tileX, int tileY)> GetPassingTiles(this DirectedLine line) {
+    #region Tile
+    #region GetPassingTiles
+    #region DirectedLine.GetPassingTiles
+    public static IEnumerable<Tile> GetPassingTiles(this DirectedLine line) {
+        foreach (var (tileX, tileY) in GetPassingTilesCoordinate(line)) {
+            yield return Main.tile[tileX, tileY];
+        }
+    }
+    public static IEnumerable<(int tileX, int tileY)> GetPassingTilesCoordinate(this DirectedLine line) {
         DirectedLine? cutQ = line.CutByRect(new Rect(0, 0, Main.maxTilesX * 16, Main.maxTilesY * 16));
         if (cutQ == null) {
             yield break;
@@ -2459,7 +2482,226 @@ public static partial class TigerExtensions {
             }
         }
     }
-
+    public static IEnumerable<(Tile tile, int tileX, int tileY)> GetPassingTilesWithCoordinate(this DirectedLine line) {
+        foreach (var (tileX, tileY) in GetPassingTilesCoordinate(line)) {
+            yield return (Main.tile[tileX, tileY], tileX, tileY);
+        }
+    }
+    #endregion
+    #region Rect.GetPassingTiles
+    public static IEnumerable<Tile> GetPassingTilesI(this Rect rect) => GetPassingTilesIF(rect.MakePositiveL());
+    public static IEnumerable<Tile> GetPassingTilesIF(this Rect rect) {
+        rect.GetTileRangeIF(out int tileLeft, out int tileRight, out int tileTop, out int tileBottom);
+        for (int j = tileTop; j <= tileBottom; ++j) {
+            for (int i = tileLeft; i <= tileRight; ++i) {
+                yield return Main.tile[i, j];
+            }
+        }
+    }
+    public static IEnumerable<(int tileX, int tileY)> GetPassingTilesCoordinateI(this Rect rect) => GetPassingTilesCoordinateIF(rect.MakePositiveL());
+    public static IEnumerable<(int tileX, int tileY)> GetPassingTilesCoordinateIF(this Rect rect) {
+        rect.GetTileRangeIF(out int tileLeft, out int tileRight, out int tileTop, out int tileBottom);
+        for (int j = tileTop; j <= tileBottom; ++j) {
+            for (int i = tileLeft; i <= tileRight; ++i) {
+                yield return (i, j);
+            }
+        }
+    }
+    public static IEnumerable<(Tile tile, int tileX, int tileY)> GetPassingTilesWithCoordinateI(this Rect rect) => GetPassingTilesWithCoordinateIF(rect.MakePositiveL());
+    public static IEnumerable<(Tile tile, int tileX, int tileY)> GetPassingTilesWithCoordinateIF(this Rect rect) {
+        rect.GetTileRangeIF(out int tileLeft, out int tileRight, out int tileTop, out int tileBottom);
+        for (int j = tileTop; j <= tileBottom; ++j) {
+            for (int i = tileLeft; i <= tileRight; ++i) {
+                yield return (Main.tile[i, j], i, j);
+            }
+        }
+    }
+    
+    public static IEnumerable<Tile> GetPassingSolidTilesI(this Rect rect) => GetPassingSolidTilesIF(rect.MakePositiveL());
+    public static IEnumerable<Tile> GetPassingSolidTilesIF(this Rect rect) {
+        rect.GetTileRangeIF(out int tileLeft, out int tileRight, out int tileTop, out int tileBottom);
+        for (int j = tileTop; j <= tileBottom; ++j) {
+            for (int i = tileLeft; i <= tileRight; ++i) {
+                var tile = Main.tile[i, j];
+                if (tile.IsSolid() && rect.CollideSolidTileIF(tile.BlockType, i, j, tileLeft, tileRight, tileTop, tileBottom)) {
+                    yield return tile;
+                }
+            }
+        }
+    }
+    public static IEnumerable<(int tileX, int tileY)> GetPassingSolidTilesCoordinateI(this Rect rect) => GetPassingSolidTilesCoordinateIF(rect.MakePositiveL());
+    public static IEnumerable<(int tileX, int tileY)> GetPassingSolidTilesCoordinateIF(this Rect rect) {
+        rect.GetTileRangeIF(out int tileLeft, out int tileRight, out int tileTop, out int tileBottom);
+        for (int j = tileTop; j <= tileBottom; ++j) {
+            for (int i = tileLeft; i <= tileRight; ++i) {
+                var tile = Main.tile[i, j];
+                if (tile.IsSolid() && rect.CollideSolidTileIF(tile.BlockType, i, j, tileLeft, tileRight, tileTop, tileBottom)) {
+                    yield return (i, j);
+                }
+            }
+        }
+    }
+    public static IEnumerable<(Tile tile, int tileX, int tileY)> GetPassingSolidTilesWithCoordinateI(this Rect rect) => GetPassingSolidTilesWithCoordinateIF(rect.MakePositiveL());
+    public static IEnumerable<(Tile tile, int tileX, int tileY)> GetPassingSolidTilesWithCoordinateIF(this Rect rect) {
+        rect.GetTileRangeIF(out int tileLeft, out int tileRight, out int tileTop, out int tileBottom);
+        for (int j = tileTop; j <= tileBottom; ++j) {
+            for (int i = tileLeft; i <= tileRight; ++i) {
+                var tile = Main.tile[i, j];
+                if (tile.IsSolid() && rect.CollideSolidTileIF(tile.BlockType, i, j, tileLeft, tileRight, tileTop, tileBottom)) {
+                    yield return (tile, i, j);
+                }
+            }
+        }
+    }
+    
+    public static IEnumerable<Tile> GetPassingSolidTopTilesI(this Rect rect) => GetPassingSolidTopTilesIF(rect.MakePositiveL());
+    public static IEnumerable<Tile> GetPassingSolidTopTilesIF(this Rect rect) {
+        rect.GetTileRangeIF(out int tileLeft, out int tileRight, out int tileTop, out int tileBottom);
+        for (int j = tileTop; j <= tileBottom; ++j) {
+            for (int i = tileLeft; i <= tileRight; ++i) {
+                var tile = Main.tile[i, j];
+                if (tile.IsSolidTop() && rect.CollideSolidTopTileIF(tile.BlockType, i, j, tileLeft, tileRight, tileTop, tileBottom)) {
+                    yield return tile;
+                }
+            }
+        }
+    }
+    public static IEnumerable<(int tileX, int tileY)> GetPassingSolidTopTilesCoordinateI(this Rect rect) => GetPassingSolidTopTilesCoordinateIF(rect.MakePositiveL());
+    public static IEnumerable<(int tileX, int tileY)> GetPassingSolidTopTilesCoordinateIF(this Rect rect) {
+        rect.GetTileRangeIF(out int tileLeft, out int tileRight, out int tileTop, out int tileBottom);
+        for (int j = tileTop; j <= tileBottom; ++j) {
+            for (int i = tileLeft; i <= tileRight; ++i) {
+                var tile = Main.tile[i, j];
+                if (tile.IsSolidTop() && rect.CollideSolidTopTileIF(tile.BlockType, i, j, tileLeft, tileRight, tileTop, tileBottom)) {
+                    yield return (i, j);
+                }
+            }
+        }
+    }
+    public static IEnumerable<(Tile tile, int tileX, int tileY)> GetPassingSolidTopTilesWithCoordinateI(this Rect rect) => GetPassingSolidTopTilesWithCoordinateIF(rect.MakePositiveL());
+    public static IEnumerable<(Tile tile, int tileX, int tileY)> GetPassingSolidTopTilesWithCoordinateIF(this Rect rect) {
+        rect.GetTileRangeIF(out int tileLeft, out int tileRight, out int tileTop, out int tileBottom);
+        for (int j = tileTop; j <= tileBottom; ++j) {
+            for (int i = tileLeft; i <= tileRight; ++i) {
+                var tile = Main.tile[i, j];
+                if (tile.IsSolidTop() && rect.CollideSolidTopTileIF(tile.BlockType, i, j, tileLeft, tileRight, tileTop, tileBottom)) {
+                    yield return (tile, i, j);
+                }
+            }
+        }
+    }
+    #endregion
+    #endregion
+    #region CollideTile
+    #region Rect.CollideTile
+    public static bool CollideSolidTileI(this Rect rect, BlockType blockType, int tileX, int tileY) {
+        rect.MakePositive();
+        return CollideSolidTileIF(rect, blockType, tileX, tileY);
+    }
+    /// <summary>
+    /// 需要 <paramref name="rect"/> 的长宽非负
+    /// </summary>
+    public static bool CollideSolidTileIF(this Rect rect, BlockType blockType, int tileX, int tileY) {
+        rect.GetTileRangeIF(out int tileLeft, out int tileRight, out int tileTop, out int tileBottom);
+        if (tileX < tileLeft || tileX > tileRight || tileY < tileTop || tileY > tileBottom) {
+            return false;
+        }
+        return CollideSolidTileIF(rect, blockType, tileX, tileY, tileLeft, tileRight, tileTop, tileBottom);
+    }
+    /// <summary>
+    /// 需要 <paramref name="rect"/> 的长宽非负, 且 <paramref name="tileX"/> 和 <paramref name="tileY"/> 在范围内
+    /// </summary>
+    public static bool CollideSolidTileIF(this Rect rect, BlockType blockType, int tileX, int tileY, int tileLeft, int tileRight, int tileTop, int tileBottom) {
+        return blockType switch {
+            BlockType.Solid => true,
+            BlockType.HalfBlock => tileY != tileBottom || rect.Bottom - tileY * 16 > 8,
+            BlockType.SlopeDownLeft => tileX != tileLeft || tileY != tileBottom || rect.Bottom - tileY * 16 > rect.Left - tileX * 16,
+            BlockType.SlopeDownRight => tileX != tileRight || tileY != tileBottom || rect.Bottom - tileY * 16 + rect.Right - tileX * 16 > 16,
+            BlockType.SlopeUpLeft => tileX != tileLeft || tileY != tileTop || rect.Top - tileY * 16 + rect.Left - tileX * 16 < 16,
+            BlockType.SlopeUpRight => tileX != tileRight || tileY != tileTop || rect.Top - tileY * 16 < rect.Right - tileX * 16,
+            _ => true,
+        };
+    }
+    public static bool CollideSolidTopTileI(this Rect rect, BlockType blockType, int tileX, int tileY) {
+        rect.MakePositive();
+        return CollideSolidTopTileIF(rect, blockType, tileX, tileY);
+    }
+    /// <summary>
+    /// 需要 <paramref name="rect"/> 的长宽非负
+    /// </summary>
+    public static bool CollideSolidTopTileIF(this Rect rect, BlockType blockType, int tileX, int tileY) {
+        rect.GetTileRangeIF(out int tileLeft, out int tileRight, out int tileTop, out int tileBottom);
+        if (tileX < tileLeft || tileX > tileRight || tileY < tileTop || tileY > tileBottom) {
+            return false;
+        }
+        return CollideSolidTopTileIF(rect, blockType, tileX, tileY, tileLeft, tileRight, tileTop, tileBottom);
+    }
+    /// <summary>
+    /// 需要 <paramref name="rect"/> 的长宽非负, 且 <paramref name="tileX"/> 和 <paramref name="tileY"/> 在范围内
+    /// </summary>
+    public static bool CollideSolidTopTileIF(this Rect rect, BlockType blockType, int tileX, int tileY, int tileLeft, int tileRight, int tileTop, int tileBottom) {
+        return blockType switch {
+            BlockType.Solid => tileY != tileTop,
+            BlockType.HalfBlock => (tileY != tileTop || rect.Top - tileY * 16 < 8) && (tileY != tileBottom || rect.Bottom - tileY * 16 > 8),
+            BlockType.SlopeDownLeft => (tileX != tileLeft || tileY != tileBottom || rect.Bottom - tileY * 16 > rect.Left - tileX * 16)
+                &&(tileX != tileRight || tileY != tileTop || rect.Top - tileY * 16 < rect.Right - tileX * 16),
+            BlockType.SlopeDownRight => (tileX != tileRight || tileY != tileBottom || rect.Bottom - tileY * 16 + rect.Right - tileX * 16 > 16)
+                && (tileX != tileLeft || tileY != tileTop || rect.Top - tileY * 16 + rect.Left - tileX * 16 < 16),
+            _ => tileY != tileTop,
+        };
+    }
+    #endregion
+    public static bool CollideSolidTile(this Vector2 point, BlockType blockType, int tileX, int tileY) {
+        if (point.X < tileX * 16 || point.X > (tileX + 1) * 16 || point.Y < tileY * 16 || point.Y > (tileY + 1) * 16) {
+            return false;
+        }
+        return blockType switch {
+            BlockType.Solid => true,
+            BlockType.HalfBlock => point.Y % 16 >= 8,
+            BlockType.SlopeDownLeft => point.Y % 16 >= point.X % 16,
+            BlockType.SlopeDownRight => point.Y % 16 + point.X % 16 >= 16,
+            BlockType.SlopeUpLeft => point.Y % 16 + point.X % 16 <= 16,
+            BlockType.SlopeUpRight => point.Y % 16 <= point.X % 16,
+            _ => true,
+        };
+    }
+    public static bool CollideSolidTileI(this Vector2 point, BlockType blockType, int tileX, int tileY) {
+        if (point.X <= tileX * 16 || point.X >= (tileX + 1) * 16 || point.Y <= tileY * 16 || point.Y >= (tileY + 1) * 16) {
+            return false;
+        }
+        return blockType switch {
+            BlockType.Solid => true,
+            BlockType.HalfBlock => point.Y - tileY * 16 > 8,
+            BlockType.SlopeDownLeft => point.Y - tileY * 16 > point.X - tileX * 16,
+            BlockType.SlopeDownRight => point.Y - tileY * 16 + point.X - tileX * 16 > 16,
+            BlockType.SlopeUpLeft => point.Y - tileY * 16 + point.X - tileX * 16 < 16,
+            BlockType.SlopeUpRight => point.Y - tileY * 16 < point.X - tileX * 16,
+            _ => true,
+        };
+    }
+    #endregion
+    #region GetTileRange
+    /// <summary>
+    /// <br/>获得矩形对应的物块边界, 全包含
+    /// <br/>会限制在世界范围内
+    /// </summary>
+    public static void GetTileRangeI(this Rect rect, out int tileLeft, out int tileRight, out int tileTop, out int tileBottom) {
+        rect.MakePositive();
+        GetTileRangeIF(rect, out tileLeft, out tileRight, out tileTop, out tileBottom);
+    }
+    /// <summary>
+    /// <br/>获得矩形对应的物块边界, 全包含
+    /// <br/>会限制在世界范围内
+    /// <br/>需保证 <paramref name="rect"/> 长宽非负
+    /// </summary>
+    public static void GetTileRangeIF(this Rect rect, out int tileLeft, out int tileRight, out int tileTop, out int tileBottom) {
+        tileTop = ((int)(rect.Top / 16)).WithMin(0);
+        tileLeft = ((int)(rect.Left / 16)).WithMin(0);
+        tileRight = ((int)MathF.Ceiling(rect.Right / 16) - 1).WithMax(Main.maxTilesX - 1);
+        tileBottom = ((int)MathF.Ceiling(rect.Bottom / 16) - 1).WithMax(Main.maxTilesY - 1);
+    }
+    #endregion
+    #endregion
     public static Rect? GetRect(this Tile tile, int tileX, int tileY) {
         // 参考 Collision.TileCollision
         if (tile == null || !tile.HasTile || tile.IsActuated || !Main.tileSolid[tile.TileType]) {
@@ -2995,6 +3237,24 @@ public static partial class TigerExtensions {
     #endregion
     public static void Draw(this SpriteBatch spriteBatch, Texture2D texture, int dx, int dy, int dw, int dh, int sx, int sy, int sw, int sh, Color color)
         => spriteBatch.Draw(texture, new Rectangle(dx, dy, dw, dh), new Rectangle(sx, sy, sw, sh), color);
+    public static void DrawBox(this SpriteBatch self, Rectangle destination, Color color, int width = 1) => DrawBox(self, destination, color, Color.Transparent, width);
+    public static void DrawBox(this SpriteBatch self, Rectangle destination, Color color, Color innerColor, int width = 1) {
+        var texture = Textures.Colors.White.Value;
+        int size = Math.Min(destination.Width, destination.Height);
+        if (width < 0 || (size + 1) / 2 <= width) {
+            self.Draw(texture, destination, color);
+            return;
+        }
+        int dx1 = destination.X, dx2 = dx1 + width, dx3 = dx1 + destination.Width - width;
+        int dy1 = destination.Y, dy2 = dy1 + width, dy3 = dy1 + destination.Height - width;
+        int dw = destination.Width, ddx = dw - 2 * width, ddy = destination.Height - 2 * width;
+        self.Draw(texture, new Rectangle(dx1, dy1, dw, width), color);
+        self.Draw(texture, new Rectangle(dx1, dy3, dw, width), color);
+        self.Draw(texture, new Rectangle(dx1, dy2, width, ddy), color);
+        self.Draw(texture, new Rectangle(dx3, dy2, width, ddy), color);
+        if (innerColor != default)
+            self.Draw(texture, new Rectangle(dx2, dy2, ddx, ddy), innerColor);
+    }
     public static void DrawInvBG(this SpriteBatch spriteBatch, int x, int y, int w, int h, int border = 10, Color? color = null) {
         color ??= new Color(63, 65, 151, 255) * 0.785f;
         spriteBatch.Draw9PieceF(TextureAssets.InventoryBack13.Value, x, y, w, h, color.Value, 10, destinationLeft: border);
@@ -3054,7 +3314,7 @@ public static partial class TigerExtensions {
         => new(spriteBatch, sortMode ?? spriteBatch.sortMode, blendState ?? spriteBatch.blendState, samplerState ?? spriteBatch.samplerState, depthStencilState ?? spriteBatch.depthStencilState, rasterizerState ?? spriteBatch.rasterizerState, effect ?? spriteBatch.customEffect, transformMatrix ?? spriteBatch.transformMatrix);
     public static SpriteBatchRebeginTemporarilyDisposable RebeginTemporarilyStillWithNullEffect(this SpriteBatch spriteBatch, SpriteSortMode? sortMode = null, BlendState? blendState = null, SamplerState? samplerState = null, DepthStencilState? depthStencilState = null, RasterizerState? rasterizerState = null, Matrix? transformMatrix = null)
         => new(spriteBatch, sortMode ?? spriteBatch.sortMode, blendState ?? spriteBatch.blendState, samplerState ?? spriteBatch.samplerState, depthStencilState ?? spriteBatch.depthStencilState, rasterizerState ?? spriteBatch.rasterizerState, null, transformMatrix ?? spriteBatch.transformMatrix);
-    
+
 
     public readonly record struct SpriteBatchRebeginTemporarilyDisposable : IDisposable {
         private readonly SpriteBatch _spriteBatch;
@@ -3082,7 +3342,7 @@ public static partial class TigerExtensions {
             _rasterizerState   = spriteBatch.rasterizerState  ;
             _effect            = spriteBatch.customEffect     ;
             _transformMatrix   = spriteBatch.transformMatrix  ;
-            
+
             _spriteBatch.End();
             _spriteBatch.Begin(sortMode, blendState, samplerState, depthStencilState, rasterizerState, effect, transformMatrix);
         }
@@ -3112,7 +3372,7 @@ public static partial class TigerExtensions {
             _rasterizerState   = spriteBatch.rasterizerState  ;
             _effect            = spriteBatch.customEffect     ;
             _transformMatrix   = spriteBatch.transformMatrix  ;
-            
+
             _spriteBatch.End();
         }
         public void Dispose() {
@@ -3133,6 +3393,9 @@ public static partial class TigerExtensions {
 
     public static Effect? GetCusomEffect(this SpriteBatch spriteBatch) => spriteBatch.customEffect;
     public static void SetCusomEffect(this SpriteBatch spriteBatch, Effect? effect) => spriteBatch.customEffect = effect;
+
+    public static Matrix GetTransformMatrix(this SpriteBatch spriteBatch) => spriteBatch.transformMatrix;
+    public static void SetTransformMatrix(this SpriteBatch spriteBatch, Matrix matrix) => spriteBatch.transformMatrix = matrix;
 
     public static bool BeginCalled(this SpriteBatch spriteBatch) => spriteBatch.beginCalled;
     public static void SetBeginCalled(this SpriteBatch spriteBatch, bool beginCalled) => spriteBatch.beginCalled = beginCalled;
@@ -3418,21 +3681,21 @@ public static partial class TigerExtensions {
         return point.X >= dimensions.X && point.X <= dimensions.X + dimensions.Width && point.Y >= dimensions.Y && point.Y <= dimensions.Y + dimensions.Height;
     }
     public static void RecalculateSelf(this UIElement self) {
-		CalculatedStyle parentDimensions = ((self.Parent == null) ? UserInterface.ActiveInstance.GetDimensions() : self.Parent.GetInnerDimensions());
-		if (self.Parent != null && self.Parent is UIList)
-			parentDimensions.Height = float.MaxValue;
+        CalculatedStyle parentDimensions = ((self.Parent == null) ? UserInterface.ActiveInstance.GetDimensions() : self.Parent.GetInnerDimensions());
+        if (self.Parent != null && self.Parent is UIList)
+            parentDimensions.Height = float.MaxValue;
 
-		CalculatedStyle calculatedStyle = (self._outerDimensions = self.GetDimensionsBasedOnParentDimensions(parentDimensions));
-		calculatedStyle.X += self.MarginLeft;
-		calculatedStyle.Y += self.MarginTop;
-		calculatedStyle.Width -= self.MarginLeft + self.MarginRight;
-		calculatedStyle.Height -= self.MarginTop + self.MarginBottom;
-		self._dimensions = calculatedStyle;
-		calculatedStyle.X += self.PaddingLeft;
-		calculatedStyle.Y += self.PaddingTop;
-		calculatedStyle.Width -= self.PaddingLeft + self.PaddingRight;
-		calculatedStyle.Height -= self.PaddingTop + self.PaddingBottom;
-		self._innerDimensions = calculatedStyle;
+        CalculatedStyle calculatedStyle = (self._outerDimensions = self.GetDimensionsBasedOnParentDimensions(parentDimensions));
+        calculatedStyle.X += self.MarginLeft;
+        calculatedStyle.Y += self.MarginTop;
+        calculatedStyle.Width -= self.MarginLeft + self.MarginRight;
+        calculatedStyle.Height -= self.MarginTop + self.MarginBottom;
+        self._dimensions = calculatedStyle;
+        calculatedStyle.X += self.PaddingLeft;
+        calculatedStyle.Y += self.PaddingTop;
+        calculatedStyle.Width -= self.PaddingLeft + self.PaddingRight;
+        calculatedStyle.Height -= self.PaddingTop + self.PaddingBottom;
+        self._innerDimensions = calculatedStyle;
     }
     #endregion
 
