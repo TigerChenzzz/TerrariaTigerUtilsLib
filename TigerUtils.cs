@@ -5872,6 +5872,14 @@ public static partial class TigerExtensions {
         return DictionaryIndexMethodExtendHelper<TKey, TValue>.GetIndexByKey(dictionary, key);
     }
     #endregion
+    public static void Set<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value, bool replace = true) where TKey : notnull {
+        if (replace) {
+            dictionary[key] = value;
+        }
+        else {
+            dictionary.TryAdd(key, value);
+        }
+    }
     #endregion
     #region ref相关拓展
     //ref拓展不知道为什么只能给值类型用

@@ -1276,7 +1276,7 @@ public static partial class TigerUtils {
                 justNewLine = false;
                 DrawString(str, size);
                 positionNow.X += size.X;
-                Debug.Assert(size.Y >= font.LineSpacing);
+                Debug.Assert(size.Y >= font.LineSpacing * scaleInner);
                 maxLineHeight.ClampMinTo(size.Y);
 
             }
