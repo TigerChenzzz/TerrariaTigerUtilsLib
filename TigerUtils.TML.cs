@@ -617,7 +617,7 @@ public static partial class TigerUtils {
     }
     #endregion
     #region ChatManager 优化
-    public class ChatManagerFix {
+    public static class ChatManagerFix {
         #region 原版代码参照
         public static Vector2 GetStringSize_Vanilla(DynamicSpriteFont font, TextSnippet[] snippets, Vector2 baseScale, float maxWidth = -1f) {
             // Vector2 mousePosition = Main.MouseScreen; // vec
@@ -2103,6 +2103,7 @@ public static partial class TigerExtensions {
         stringBuilder.Append(ItemTagHandler.GenerateTag(ContentSamples.ItemsByType[itemID]));
     #endregion
     #region 关于Tooltips
+    #region AddIf
     public static bool AddIf(this List<TooltipLine> tooltips, bool condition, string name, string text, Color? overrideColor = null) {
         if (condition) {
             TooltipLine line = new(ModInstance, name, text);
@@ -2136,6 +2137,8 @@ public static partial class TigerExtensions {
         }
         return false;
     }
+    #endregion
+    #region InsertIf
     public static bool InsertIf(this List<TooltipLine> tooltips, bool condition, int index, string name, string text, Color? overrideColor = null) {
         if (condition) {
             TooltipLine line = new(ModInstance, name, text);
@@ -2169,6 +2172,7 @@ public static partial class TigerExtensions {
         }
         return false;
     }
+    #endregion
     public static List<TooltipLine> GetTooltips(this Item item) {
         //摘自Main.MouseText_DrawItemTooltip
         float num = 1f;

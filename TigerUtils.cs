@@ -4390,20 +4390,54 @@ public static partial class TigerExtensions {
     /// <returns>删除的元素个数</returns>
     public static int RemoveAll<T>(this IList<T> list, Func<T, bool> predicate) {
         int result = 0;
-        for (int i = list.Count - 1; i >= 0; --i) {
+        for (int i = 0; i < list.Count; ++i) {
             if (predicate(list[i])) {
-                list.RemoveAt(i);
                 result += 1;
+                continue;
             }
+            if (result != 0) {
+                list[i - result] = list[i];
+            }
+        }
+        if (result > 0) {
+            list.RemoveRange(list.Count - result, result);
         }
         return result;
     }
     public static void RemoveAt<T>(this IList<T> list, Index index) {
         list.RemoveAt(GetIndex(list, index));
     }
-    public static void RemoveRange<T>(this List<T> list, Range range) {
+    public static void RemoveRange<T>(this IList<T> list, Range range) {
         GetRange(list, range, out int start, out int end);
         list.RemoveRange(start, end - start);
+    }
+    public static void RemoveRangeS<T>(this IList<T> list, Range range) {
+        GetRange(list, range, out int start, out int end);
+        list.RemoveRangeS(start, end - start);
+    }
+    public static void RemoveRange<T>(this IList<T> list, int index, int count) {
+        if (list is List<T> realList) {
+            realList.RemoveRange(index, count);
+            return;
+        }
+        for (int i = index + count; i < list.Count; ++i) {
+            list[i - count] = list[i];
+        }
+        var resultCount = list.Count - count;
+        for (int i = list.Count - 1; i >= resultCount; --i) {
+            list.RemoveAt(i);
+        }
+    }
+    public static void RemoveRangeS<T>(this IList<T> list, int index, int count) {
+        if (index < 0) {
+            count += index;
+            index = 0;
+        }
+        if (index >= list.Count) {
+            return;
+        }
+        count.ClampMaxTo(list.Count - index);
+        list.RemoveRange(index, count);
     }
     #endregion
     #region 快排 (快速排序)
@@ -5276,42 +5310,96 @@ public static partial class TigerExtensions {
     }
     #endregion
     #region Length相关
-    public static void ClampLength<T>(this List<T> list, int length) {
+    #region ClampLength
+    /// <summary>
+    /// 限制 <paramref name="list"/> 的最大长度为 <paramref name="length"/>
+    /// </summary>
+    public static void ClampLength<T>(this IList<T> list, int length) {
         if (list.Count <= length) {
             return;
         }
         list.RemoveRange(length, list.Count - length);
     }
     /// <summary>
-    /// 需要<paramref name="list"/>的长度大于<paramref name="length"/>
+    /// <br/>限制 <paramref name="list"/> 的最大长度为 <paramref name="length"/>
+    /// <br/>需要 <paramref name="list"/> 的长度大于 <paramref name="length"/>
     /// </summary>
-    public static void ClampLengthF<T>(this List<T> list, int length) {
+    public static void ClampLengthF<T>(this IList<T> list, int length) {
         list.RemoveRange(length, list.Count - length);
     }
-    public static void ClampLengthS<T>(this IList<T> list, int length) {
+    /// <summary>
+    /// <br/>限制 <paramref name="list"/> 的最大长度为 <paramref name="length"/>
+    /// <br/>在移除每一项前调用 <paramref name="onRemove"/>
+    /// </summary>
+    public static void ClampLength<T>(this IList<T> list, int length, Action<T> onRemove) {
         for (int i = list.Count - 1; i >= length; --i) {
+            onRemove(list[i]);
             list.RemoveAt(i);
         }
     }
-    public static void ClampLength<T>(this IList<T> list, int length) {
+    /// <inheritdoc cref="ClampLength{T}(IList{T}, int, Action{T})"/>
+    public static void ClampLength<T>(this IList<T> list, int length, Action<int, T> onRemove) {
         for (int i = list.Count - 1; i >= length; --i) {
+            onRemove(i, list[i]);
             list.RemoveAt(i);
         }
     }
-
+    /// <summary>
+    /// <br/>限制 <paramref name="list"/> 的最大长度为 <paramref name="length"/>
+    /// <br/>在移除每一项前调用 <paramref name="onRemove"/>
+    /// <br/>需要 <paramref name="list"/> 的长度大于 <paramref name="length"/>
+    /// </summary>
+    public static void ClampLengthF<T>(this IList<T> list, int length, Action<T> onRemove) {
+        for (int i = list.Count - 1; i >= length; --i) {
+            onRemove(list[i]);
+        }
+        list.RemoveRange(length, list.Count - length);
+    }
+    /// <inheritdoc cref="ClampLengthF{T}(IList{T}, int, Action{T})"/>
+    public static void ClampLengthF<T>(this IList<T> list, int length, Action<int, T> onRemove) {
+        for (int i = list.Count - 1; i >= length; --i) {
+            onRemove(i, list[i]);
+        }
+        list.RemoveRange(length, list.Count - length);
+    }
+    #endregion
+    #region EnsureLength
+    /// <summary>
+    /// 保证 <paramref name="list"/> 的最小长度为 <paramref name="length"/>, 不足使用默认值填充
+    /// </summary>
     public static void EnsureLength<T>(this IList<T?> list, int length) => list.EnsureLength(length, default(T));
+    /// <summary>
+    /// 保证 <paramref name="list"/> 的最小长度为 <paramref name="length"/>, 不足使用 <paramref name="fillValue"/> 填充
+    /// </summary>
     public static void EnsureLength<T>(this IList<T> list, int length, T fillValue) {
         for (int i = list.Count; i < length; ++i) {
             list.Add(fillValue);
         }
     }
+    /// <summary>
+    /// 保证 <paramref name="list"/> 的最小长度为 <paramref name="length"/>, 不足使用 <paramref name="fillValueGetter"/> 填充
+    /// </summary>
     public static void EnsureLength<T>(this IList<T> list, int length, Func<T> fillValueGetter) {
         for (int i = list.Count; i < length; ++i) {
             list.Add(fillValueGetter());
         }
     }
-
+    /// <inheritdoc cref="EnsureLength{T}(IList{T}, int, Func{T})"/>
+    public static void EnsureLength<T>(this IList<T> list, int length, Func<int, T> fillValueGetter) {
+        for (int i = list.Count; i < length; ++i) {
+            list.Add(fillValueGetter(i));
+        }
+    }
+    #endregion
+    #region SetLength
+    #region 没有 onRemove
+    /// <summary>
+    /// 保证 <paramref name="list"/> 的长度为 <paramref name="length"/>, 不足使用默认值填充
+    /// </summary>
     public static void SetLength<T>(this IList<T?> list, int length) => list.SetLength(length, default(T));
+    /// <summary>
+    /// 保证 <paramref name="list"/> 的最小长度为 <paramref name="length"/>, 不足使用 <paramref name="fillValue"/> 填充
+    /// </summary>
     public static void SetLength<T>(this IList<T> list, int length, T fillValue) {
         int count = list.Count;
         if (count < length) {
@@ -5321,6 +5409,9 @@ public static partial class TigerExtensions {
             list.ClampLength(length);
         }
     }
+    /// <summary>
+    /// 保证 <paramref name="list"/> 的最小长度为 <paramref name="length"/>, 不足使用 <paramref name="fillValueGetter"/> 填充
+    /// </summary>
     public static void SetLength<T>(this IList<T> list, int length, Func<T> fillValueGetter) {
         int count = list.Count;
         if (count < length) {
@@ -5330,6 +5421,176 @@ public static partial class TigerExtensions {
             list.ClampLength(length);
         }
     }
+    /// <inheritdoc cref="SetLength{T}(IList{T}, int, Func{T})"/>
+    public static void SetLength<T>(this IList<T> list, int length, Func<int, T> fillValueGetter) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValueGetter);
+        }
+        else if (count > length) {
+            list.ClampLength(length);
+        }
+    }
+    #endregion
+    #region 带有 onRemove, 使用默认值填充
+    /// <summary>
+    /// <br/>保证 <paramref name="list"/> 的最小长度为 <paramref name="length"/>, 不足使用默认值填充
+    /// <br/>在移除每一项前调用 <paramref name="onRemove"/>
+    /// </summary>
+    public static void SetLength<T>(this IList<T?> list, int length, Action<T?> onRemove) => list.SetLength(length, default(T), onRemove);
+    /// <summary>
+    /// <br/>保证 <paramref name="list"/> 的最小长度为 <paramref name="length"/>, 不足使用默认值填充
+    /// <br/>在移除每一个非空项前调用 <paramref name="onRemove"/>
+    /// </summary>
+    public static void SetLengthS<T>(this IList<T?> list, int length, Action<T> onRemove) => list.SetLength(length, default(T), t => {
+        if (t != null)
+            onRemove(t);
+    });
+    /// <inheritdoc cref="SetLength{T}(IList{T}, int, Action{T})"/>
+    public static void SetLength<T>(this IList<T?> list, int length, Action<int, T?> onRemove) => list.SetLength(length, default(T), onRemove);
+    /// <inheritdoc cref="SetLengthS{T}(IList{T}, int, Action{T})"/>
+    public static void SetLengthS<T>(this IList<T?> list, int length, Action<int, T> onRemove) => list.SetLength(length, default(T), (i, t) => {
+        if (t != null)
+            onRemove(i, t);
+    });
+    #endregion
+    #region 带有 onRemove, 使用固定值填充
+    /// <summary>
+    /// 保证 <paramref name="list"/> 的最小长度为 <paramref name="length"/>, 不足使用 <paramref name="fillValue"/> 填充
+    /// <br/>在移除每一项前调用 <paramref name="onRemove"/>
+    /// </summary>
+    public static void SetLength<T>(this IList<T> list, int length, T fillValue, Action<T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValue);
+        }
+        else if (count > length) {
+            list.ClampLength(length, onRemove);
+        }
+    }
+    /// <summary>
+    /// 保证 <paramref name="list"/> 的最小长度为 <paramref name="length"/>, 不足使用 <paramref name="fillValue"/> 填充
+    /// <br/>在移除前对每一个要移除的项调用 <paramref name="onRemove"/>, 随后再全部移除
+    /// </summary>
+    public static void SetLengthF<T>(this IList<T> list, int length, T fillValue, Action<T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValue);
+        }
+        else if (count > length) {
+            list.ClampLengthF(length, onRemove);
+        }
+    }
+    /// <inheritdoc cref="SetLength{T}(IList{T}, int, T, Action{T})"/>
+    public static void SetLength<T>(this IList<T> list, int length, T fillValue, Action<int, T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValue);
+        }
+        else if (count > length) {
+            list.ClampLength(length, onRemove);
+        }
+    }
+    /// <inheritdoc cref="SetLengthF{T}(IList{T}, int, T, Action{T})"/>
+    public static void SetLengthF<T>(this IList<T> list, int length, T fillValue, Action<int, T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValue);
+        }
+        else if (count > length) {
+            list.ClampLengthF(length, onRemove);
+        }
+    }
+    #endregion
+    #region 带有 onRemove, 使用方法填充
+    /// <summary>
+    /// 保证 <paramref name="list"/> 的最小长度为 <paramref name="length"/>, 不足使用 <paramref name="fillValueGetter"/> 填充
+    /// <br/>在移除每一项前调用 <paramref name="onRemove"/>
+    /// </summary>
+    public static void SetLength<T>(this IList<T> list, int length, Func<T> fillValueGetter, Action<T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValueGetter);
+        }
+        else if (count > length) {
+            list.ClampLength(length, onRemove);
+        }
+    }
+    /// <inheritdoc cref="SetLength{T}(IList{T}, int, Func{T}, Action{T})"/>
+    public static void SetLength<T>(this IList<T> list, int length, Func<int, T> fillValueGetter, Action<T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValueGetter);
+        }
+        else if (count > length) {
+            list.ClampLength(length, onRemove);
+        }
+    }
+    /// <summary>
+    /// 保证 <paramref name="list"/> 的最小长度为 <paramref name="length"/>, 不足使用 <paramref name="fillValueGetter"/> 填充
+    /// <br/>在移除前对每一个要移除的项调用 <paramref name="onRemove"/>, 随后再全部移除
+    /// </summary>
+    public static void SetLengthF<T>(this IList<T> list, int length, Func<T> fillValueGetter, Action<T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValueGetter);
+        }
+        else if (count > length) {
+            list.ClampLengthF(length, onRemove);
+        }
+    }
+    /// <inheritdoc cref="SetLengthF{T}(IList{T}, int, Func{T}, Action{T})"/>
+    public static void SetLengthF<T>(this IList<T> list, int length, Func<int, T> fillValueGetter, Action<T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValueGetter);
+        }
+        else if (count > length) {
+            list.ClampLengthF(length, onRemove);
+        }
+    }
+    /// <inheritdoc cref="SetLength{T}(IList{T}, int, Func{T}, Action{T})"/>
+    public static void SetLength<T>(this IList<T> list, int length, Func<T> fillValueGetter, Action<int, T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValueGetter);
+        }
+        else if (count > length) {
+            list.ClampLength(length, onRemove);
+        }
+    }
+    /// <inheritdoc cref="SetLength{T}(IList{T}, int, Func{int, T}, Action{T})"/>
+    public static void SetLength<T>(this IList<T> list, int length, Func<int, T> fillValueGetter, Action<int, T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValueGetter);
+        }
+        else if (count > length) {
+            list.ClampLength(length, onRemove);
+        }
+    }
+    /// <inheritdoc cref="SetLengthF{T}(IList{T}, int, Func{T}, Action{T})"/>
+    public static void SetLengthF<T>(this IList<T> list, int length, Func<T> fillValueGetter, Action<int, T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValueGetter);
+        }
+        else if (count > length) {
+            list.ClampLengthF(length, onRemove);
+        }
+    }
+    /// <inheritdoc cref="SetLengthF{T}(IList{T}, int, Func{int, T}, Action{T})"/>
+    public static void SetLengthF<T>(this IList<T> list, int length, Func<int, T> fillValueGetter, Action<int, T> onRemove) {
+        int count = list.Count;
+        if (count < length) {
+            list.EnsureLength(length, fillValueGetter);
+        }
+        else if (count > length) {
+            list.ClampLengthF(length, onRemove);
+        }
+    }
+    #endregion
+    #endregion
     #endregion
     #region 获得数组的元素
     #region Get<T>
