@@ -1,6 +1,7 @@
 ﻿// #define TIGER_REFLECTION_EXTENSIONS
 
 global using static TigerUtilsLib.TigerClasses;
+global using static TigerUtilsLib.TigerStatics;
 global using static TigerUtilsLib.TigerUtils;
 using Microsoft.Xna.Framework;
 using Mono.Cecil;
@@ -2556,28 +2557,22 @@ public static partial class TigerUtils {
     #endregion
     #endregion
     #region 反射
-
-    #region 常用的BindingFlags
-    private const BindingFlags bfpnsi = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
-    private const BindingFlags bfpni = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
-    private const BindingFlags bfpns = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
-    #endregion
     #region 方法的委托
-    public static TDelegate GetMethodDelegate<T, TDelegate>(string methodName, BindingFlags flags = bfpnsi) where TDelegate : Delegate {
+    public static TDelegate GetMethodDelegate<T, TDelegate>(string methodName, BindingFlags flags = BFALL) where TDelegate : Delegate {
         return typeof(T).GetMethod(methodName, flags)!.CreateDelegate<TDelegate>();
     }
-    public static TDelegate GetMethodDelegate<T, TDelegate>(string methodName, Type[] types, BindingFlags flags = bfpnsi) where TDelegate : Delegate {
+    public static TDelegate GetMethodDelegate<T, TDelegate>(string methodName, Type[] types, BindingFlags flags = BFALL) where TDelegate : Delegate {
         return typeof(T).GetMethod(methodName, flags, types)!.CreateDelegate<TDelegate>();
     }
     #endregion
     #region 获取字段的委托
-    public static Func<T, TField> GetGetFieldDelegate<T, TField>(string fieldName, BindingFlags flags = bfpni)
+    public static Func<T, TField> GetGetFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFI)
         => GetGetFieldDelegate<T, TField>(typeof(T).GetField(fieldName, flags)!);
-    public static Func<object, TField> GetGetFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = bfpni)
+    public static Func<object, TField> GetGetFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = BFI)
         => GetGetFieldDelegate<TField>(type, type.GetField(fieldName, flags)!);
-    public static Func<T, object?> GetGetFieldDelegate<T>(string fieldName, BindingFlags flags = bfpni)
+    public static Func<T, object?> GetGetFieldDelegate<T>(string fieldName, BindingFlags flags = BFI)
         => GetGetFieldDelegate<T>(typeof(T).GetField(fieldName, flags)!);
-    public static Func<object, object?> GetGetFieldDelegate(Type type, string fieldName, BindingFlags flags = bfpni)
+    public static Func<object, object?> GetGetFieldDelegate(Type type, string fieldName, BindingFlags flags = BFI)
         => GetGetFieldDelegate(type, type.GetField(fieldName, flags)!);
 
     public static Func<T, TField> GetGetFieldDelegate<T, TField>(FieldInfo field) {
@@ -2639,13 +2634,13 @@ public static partial class TigerUtils {
         => GetGetFieldDelegate<T>(field);
 
     #region 获取静态字段的委托
-    public static Func<TField> GetGetStaticFieldDelegate<T, TField>(string fieldName, BindingFlags flags = bfpns)
+    public static Func<TField> GetGetStaticFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFS)
         => GetGetStaticFieldDelegate<TField>(typeof(T), fieldName, flags);
-    public static Func<TField> GetGetStaticFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = bfpns)
+    public static Func<TField> GetGetStaticFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = BFS)
         => GetGetStaticFieldDelegate<TField>(type.GetField(fieldName, flags)!);
-    public static Func<object?> GetGetStaticFieldDelegate<T>(string fieldName, BindingFlags flags = bfpns)
+    public static Func<object?> GetGetStaticFieldDelegate<T>(string fieldName, BindingFlags flags = BFS)
         => GetGetStaticFieldDelegate(typeof(T), fieldName, flags);
-    public static Func<object?> GetGetStaticFieldDelegate(Type type, string fieldName, BindingFlags flags = bfpns)
+    public static Func<object?> GetGetStaticFieldDelegate(Type type, string fieldName, BindingFlags flags = BFS)
         => GetGetStaticFieldDelegate(type.GetField(fieldName, flags)!);
 
     public static Func<TField> GetGetStaticFieldDelegate<TField>(FieldInfo field) {
@@ -2669,13 +2664,13 @@ public static partial class TigerUtils {
 
     #endregion
     #region 设置字段的委托
-    public static Action<T, TField> GetSetFieldDelegate<T, TField>(string fieldName, BindingFlags flags = bfpni)
+    public static Action<T, TField> GetSetFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFI)
         => GetSetFieldDelegate<T, TField>(typeof(T).GetField(fieldName, flags)!);
-    public static Action<object, TField> GetSetFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = bfpni)
+    public static Action<object, TField> GetSetFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = BFI)
         => GetSetFieldDelegate<TField>(type, type.GetField(fieldName, flags)!);
-    public static Action<T, object?> GetSetFieldDelegate<T>(string fieldName, BindingFlags flags = bfpni)
+    public static Action<T, object?> GetSetFieldDelegate<T>(string fieldName, BindingFlags flags = BFI)
         => GetSetFieldDelegate<T>(typeof(T).GetField(fieldName, flags)!);
-    public static Action<object, object?> GetSetFieldDelegate(Type type, string fieldName, BindingFlags flags = bfpni)
+    public static Action<object, object?> GetSetFieldDelegate(Type type, string fieldName, BindingFlags flags = BFI)
         => GetSetFieldDelegate(type, type.GetField(fieldName, flags)!);
 
     public static Action<T, TField> GetSetFieldDelegate<T, TField>(FieldInfo field) {
@@ -2755,13 +2750,13 @@ public static partial class TigerUtils {
         => GetSetFieldDelegate<T>(field);
 
     #region 设置静态字段的委托
-    public static Action<TField> GetSetStaticFieldDelegate<T, TField>(string fieldName, BindingFlags flags = bfpns)
+    public static Action<TField> GetSetStaticFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFS)
         => GetSetStaticFieldDelegate<TField>(typeof(T), fieldName, flags);
-    public static Action<TField> GetSetStaticFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = bfpns)
+    public static Action<TField> GetSetStaticFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = BFS)
         => GetSetStaticFieldDelegate<TField>(type.GetField(fieldName, flags)!);
-    public static Action<object?> GetSetStaticFieldDelegate<T>(string fieldName, BindingFlags flags = bfpns)
+    public static Action<object?> GetSetStaticFieldDelegate<T>(string fieldName, BindingFlags flags = BFS)
         => GetSetStaticFieldDelegate(typeof(T), fieldName, flags);
-    public static Action<object?> GetSetStaticFieldDelegate(Type type, string fieldName, BindingFlags flags = bfpns)
+    public static Action<object?> GetSetStaticFieldDelegate(Type type, string fieldName, BindingFlags flags = BFS)
         => GetSetStaticFieldDelegate(type.GetField(fieldName, flags)!);
 
     public static Action<TField> GetSetStaticFieldDelegate<TField>(FieldInfo field) {
@@ -2792,9 +2787,9 @@ public static partial class TigerUtils {
     #region 获得引用字段的委托
     public delegate ref TValue RefInstanceMemberGetter<T, TValue>(T self);
 
-    public static RefInstanceMemberGetter<T, TField> GetGetRefFieldDelegate<T, TField>(string fieldName, BindingFlags flags = bfpni)
+    public static RefInstanceMemberGetter<T, TField> GetGetRefFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFI)
         => GetGetRefFieldDelegate<T, TField>(typeof(T).GetField(fieldName, flags)!);
-    public static RefInstanceMemberGetter<object, TField> GetGetRefFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = bfpni)
+    public static RefInstanceMemberGetter<object, TField> GetGetRefFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = BFI)
         => GetGetRefFieldDelegate<TField>(type, type.GetField(fieldName, flags)!);
 
     public static RefInstanceMemberGetter<T, TField> GetGetRefFieldDelegate<T, TField>(FieldInfo field) {
@@ -2829,9 +2824,9 @@ public static partial class TigerUtils {
     
     public delegate ref TValue RefStaticMemberGetter<TValue>();
 
-    public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<T, TField>(string fieldName, BindingFlags flags = bfpns)
+    public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFS)
         => GetGetStaticRefFieldDelegate<TField>(typeof(T).GetField(fieldName, flags)!);
-    public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = bfpns)
+    public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = BFS)
         => GetGetStaticRefFieldDelegate<TField>(type.GetField(fieldName, flags)!);
 
     public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<TField>(FieldInfo field) {
@@ -2846,30 +2841,30 @@ public static partial class TigerUtils {
 
     #endregion
     #region 获取属性的委托
-    public static Func<T, TProperty> GetGetPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = bfpni)
+    public static Func<T, TProperty> GetGetPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = BFI)
         => GetGetPropertyDelegate<T, TProperty>(typeof(T).GetProperty(propertyName, flags)!);
     public static Func<T, TProperty> GetGetPropertyDelegate<T, TProperty>(PropertyInfo property) {
         return property.GetMethod!.CreateDelegate<Func<T, TProperty>>();
     }
 
-    public static Func<TProperty> GetGetStaticPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = bfpns)
+    public static Func<TProperty> GetGetStaticPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = BFS)
         => GetGetStaticPropertyDelegate<TProperty>(typeof(T), propertyName, flags);
-    public static Func<TProperty> GetGetStaticPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = bfpns)
+    public static Func<TProperty> GetGetStaticPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = BFS)
         => GetGetStaticPropertyDelegate<TProperty>(type.GetProperty(propertyName, flags)!);
     public static Func<TProperty> GetGetStaticPropertyDelegate<TProperty>(PropertyInfo property) {
         return property.GetMethod!.CreateDelegate<Func<TProperty>>();
     }
     #endregion
     #region 设置属性的委托
-    public static Action<T, TProperty> GetSetPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = bfpni)
+    public static Action<T, TProperty> GetSetPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = BFI)
         => GetSetPropertyDelegate<T, TProperty>(typeof(T).GetProperty(propertyName, flags)!);
     public static Action<T, TProperty> GetSetPropertyDelegate<T, TProperty>(PropertyInfo property) {
         return property.SetMethod!.CreateDelegate<Action<T, TProperty>>();
     }
 
-    public static Action<TProperty> GetSetStaticPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = bfpns)
+    public static Action<TProperty> GetSetStaticPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = BFS)
         => GetSetStaticPropertyDelegate<TProperty>(typeof(T), propertyName, flags);
-    public static Action<TProperty> GetSetStaticPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = bfpns)
+    public static Action<TProperty> GetSetStaticPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = BFS)
         => GetSetStaticPropertyDelegate<TProperty>(type.GetProperty(propertyName, flags)!);
     public static Action<TProperty> GetSetStaticPropertyDelegate<TProperty>(PropertyInfo property) {
         return property.SetMethod!.CreateDelegate<Action<TProperty>>();
@@ -2918,6 +2913,14 @@ public static partial class TigerUtils {
     }
     public static IComparer<T> NewComparer<T>(Func<T?, T?, int> compare) => new CustomComparer<T>(compare);
     public static int ToInt(bool @bool) => @bool ? 1 : 0;
+    /// <summary>
+    /// 保证类型 <typeparamref name="T"/> 的静态构造已被执行, 如果有的话 (静态构造只会执行一次)
+    /// </summary>
+    public static void InvokeStaticConstructor<T>() => InvokeStaticConstructor(typeof(T));
+    /// <summary>
+    /// 保证类型 <paramref name="type"/> 的静态构造已被执行, 如果有的话 (静态构造只会执行一次)
+    /// </summary>
+    public static void InvokeStaticConstructor(Type type) => type.TypeInitializer?.Invoke(null, null);
     #endregion
 }
 
@@ -3792,6 +3795,20 @@ public static partial class TigerClasses {
     #endregion
 }
 
+public static class TigerStatics {
+    #region BindingFlags
+    public const BindingFlags BFALL = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+    public const BindingFlags BFP   = BindingFlags.Public                          | BindingFlags.Static | BindingFlags.Instance;
+    public const BindingFlags BFN   =                       BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance;
+    public const BindingFlags BFS   = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static                        ;
+    public const BindingFlags BFI   = BindingFlags.Public | BindingFlags.NonPublic |                       BindingFlags.Instance;
+    public const BindingFlags BFPS  = BindingFlags.Public                          | BindingFlags.Static                        ;
+    public const BindingFlags BFNS  =                       BindingFlags.NonPublic | BindingFlags.Static                        ;
+    public const BindingFlags BFPI  = BindingFlags.Public                          |                       BindingFlags.Instance;
+    public const BindingFlags BFNI  =                       BindingFlags.NonPublic |                       BindingFlags.Instance;
+    #endregion
+}
+
 public static partial class TigerExtensions {
     #region Lua的 And / Or 体系
     /// <summary>
@@ -4407,6 +4424,7 @@ public static partial class TigerExtensions {
     public static void RemoveAt<T>(this IList<T> list, Index index) {
         list.RemoveAt(GetIndex(list, index));
     }
+    #region RemoveRange
     public static void RemoveRange<T>(this IList<T> list, Range range) {
         GetRange(list, range, out int start, out int end);
         list.RemoveRange(start, end - start);
@@ -4439,6 +4457,7 @@ public static partial class TigerExtensions {
         count.ClampMaxTo(list.Count - index);
         list.RemoveRange(index, count);
     }
+    #endregion
     #endregion
     #region 快排 (快速排序)
     public static void QuickSort<T>(this IList<T> list) where T : IComparable<T> => QuickSortInner(list, 0, list.Count);
