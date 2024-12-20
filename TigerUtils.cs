@@ -1218,88 +1218,58 @@ public static partial class TigerUtils {
         return false;
     }
 
+    #region 不带返回值的
     /// <summary>
     /// 执行<paramref name="action"/>
     /// </summary>
     /// <returns>false</returns>
-    public static bool Do(Action action) => GetRightA(action, false);
-    public static bool Do<T>(Action<T> action, T t) {
-        action.Invoke(t);
-        return false;
-    }
-    public static bool Do<T1, T2>(Action<T1, T2> action, T1 t1, T2 t2) {
-        action.Invoke(t1, t2);
-        return false;
-    }
-    public static bool Do<T1, T2, T3>(Action<T1, T2, T3> action, T1 t1, T2 t2, T3 t3) {
-        action.Invoke(t1, t2, t3);
-        return false;
-    }
-    public static bool Do<T1, T2, T3, T4>(Action<T1, T2, T3, T4> action, T1 t1, T2 t2, T3 t3, T4 t4) {
-        action.Invoke(t1, t2, t3, t4);
-        return false;
-    }
-    public static bool Do<T1, T2, T3, T4, T5>(Action<T1, T2, T3, T4, T5> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) {
-        action.Invoke(t1, t2, t3, t4, t5);
-        return false;
-    }
-    public static bool Do<T1, T2, T3, T4, T5, T6>(Action<T1, T2, T3, T4, T5, T6> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) {
-        action.Invoke(t1, t2, t3, t4, t5, t6);
-        return false;
-    }
-    public static bool Do<T1, T2, T3, T4, T5, T6, T7>(Action<T1, T2, T3, T4, T5, T6, T7> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) {
-        action.Invoke(t1, t2, t3, t4, t5, t6, t7);
-        return false;
-    }
-    public static bool Do<T1, T2, T3, T4, T5, T6, T7, T8>(Action<T1, T2, T3, T4, T5, T6, T7, T8> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) {
-        action.Invoke(t1, t2, t3, t4, t5, t6, t7, t8);
-        return false;
-    }
-    public static bool Do<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9) {
-        action.Invoke(t1, t2, t3, t4, t5, t6, t7, t8, t9);
-        return false;
-    }
-
-    public static bool Do<TResult>(Func<TResult> action) {
-        action.Invoke();
-        return false;
-    }
-    public static bool Do<TResult, T>(Func<T, TResult> action, T t) {
-        action.Invoke(t);
-        return false;
-    }
-    public static bool Do<TResult, T1, T2>(Func<T1, T2, TResult> action, T1 t1, T2 t2) {
-        action.Invoke(t1, t2);
-        return false;
-    }
-    public static bool Do<TResult, T1, T2, T3>(Func<T1, T2, T3, TResult> action, T1 t1, T2 t2, T3 t3) {
-        action.Invoke(t1, t2, t3);
-        return false;
-    }
-    public static bool Do<TResult, T1, T2, T3, T4>(Func<T1, T2, T3, T4, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4) {
-        action.Invoke(t1, t2, t3, t4);
-        return false;
-    }
-    public static bool Do<TResult, T1, T2, T3, T4, T5>(Func<T1, T2, T3, T4, T5, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) {
-        action.Invoke(t1, t2, t3, t4, t5);
-        return false;
-    }
-    public static bool Do<TResult, T1, T2, T3, T4, T5, T6>(Func<T1, T2, T3, T4, T5, T6, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) {
-        action.Invoke(t1, t2, t3, t4, t5, t6);
-        return false;
-    }
-    public static bool Do<TResult, T1, T2, T3, T4, T5, T6, T7>(Func<T1, T2, T3, T4, T5, T6, T7, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) {
-        action.Invoke(t1, t2, t3, t4, t5, t6, t7);
-        return false;
-    }
-    public static bool Do<TResult, T1, T2, T3, T4, T5, T6, T7, T8>(Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) {
-        action.Invoke(t1, t2, t3, t4, t5, t6, t7, t8);
-        return false;
-    }
-    public static bool Do<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9) {
-        action.Invoke(t1, t2, t3, t4, t5, t6, t7, t8, t9);
-        return false;
-    }
+    public static bool Do(Action action) { action(); return false; }
+    public static bool Do<T>(Action<T> action, T t) { action(t); return false; }
+    public static bool Do<T1, T2>(Action<T1, T2> action, T1 t1, T2 t2) { action(t1, t2); return false; }
+    public static bool Do<T1, T2, T3>(Action<T1, T2, T3> action, T1 t1, T2 t2, T3 t3) { action(t1, t2, t3); return false; }
+    public static bool Do<T1, T2, T3, T4>(Action<T1, T2, T3, T4> action, T1 t1, T2 t2, T3 t3, T4 t4) { action(t1, t2, t3, t4); return false; }
+    public static bool Do<T1, T2, T3, T4, T5>(Action<T1, T2, T3, T4, T5> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) { action(t1, t2, t3, t4, t5); return false; }
+    public static bool Do<T1, T2, T3, T4, T5, T6>(Action<T1, T2, T3, T4, T5, T6> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) { action(t1, t2, t3, t4, t5, t6); return false; }
+    public static bool Do<T1, T2, T3, T4, T5, T6, T7>(Action<T1, T2, T3, T4, T5, T6, T7> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) { action(t1, t2, t3, t4, t5, t6, t7); return false; }
+    public static bool Do<T1, T2, T3, T4, T5, T6, T7, T8>(Action<T1, T2, T3, T4, T5, T6, T7, T8> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) { action(t1, t2, t3, t4, t5, t6, t7, t8); return false; }
+    public static bool Do<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9) { action(t1, t2, t3, t4, t5, t6, t7, t8, t9); return false; }
+    #endregion
+    #region 带有返回值的
+    public static bool Do<TResult>(Func<TResult> action) => GetRight(action(), false);
+    public static bool Do<TResult, T>(Func<T, TResult> action, T t) => GetRight(action(t), false);    
+    public static bool Do<TResult, T1, T2>(Func<T1, T2, TResult> action, T1 t1, T2 t2) => GetRight(action(t1, t2), false);    
+    public static bool Do<TResult, T1, T2, T3>(Func<T1, T2, T3, TResult> action, T1 t1, T2 t2, T3 t3) => GetRight(action(t1, t2, t3), false);    
+    public static bool Do<TResult, T1, T2, T3, T4>(Func<T1, T2, T3, T4, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4) => GetRight(action(t1, t2, t3, t4), false);    
+    public static bool Do<TResult, T1, T2, T3, T4, T5>(Func<T1, T2, T3, T4, T5, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5) => GetRight(action(t1, t2, t3, t4, t5), false);    
+    public static bool Do<TResult, T1, T2, T3, T4, T5, T6>(Func<T1, T2, T3, T4, T5, T6, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6) => GetRight(action(t1, t2, t3, t4, t5, t6), false);    
+    public static bool Do<TResult, T1, T2, T3, T4, T5, T6, T7>(Func<T1, T2, T3, T4, T5, T6, T7, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7) => GetRight(action(t1, t2, t3, t4, t5, t6, t7), false);    
+    public static bool Do<TResult, T1, T2, T3, T4, T5, T6, T7, T8>(Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8) => GetRight(action(t1, t2, t3, t4, t5, t6, t7, t8), false);    
+    public static bool Do<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9) => GetRight(action(t1, t2, t3, t4, t5, t6, t7, t8, t9), false);
+    #endregion
+    #region 有一个out参数而不带返回值的
+    public static bool Do<TOut>(VoidOut1Delegate<TOut> outDelegate, out TOut @out) { outDelegate(out @out); return false; }
+    public static bool Do<TOut, T2>(VoidOut1Delegate<TOut, T2> outDelegate, out TOut @out, T2 t2) { outDelegate(out @out, t2); return false; }
+    public static bool Do<T1, TOut>(VoidOut2Delegate<T1, TOut> outDelegate, T1 t1, out TOut @out) { outDelegate(t1, out @out); return false; }
+    public static bool Do<TOut, T2, T3>(VoidOut1Delegate<TOut, T2, T3> outDelegate, out TOut @out, T2 t2, T3 t3) { outDelegate(out @out, t2, t3); return false; }
+    public static bool Do<T1, TOut, T3>(VoidOut2Delegate<T1, TOut, T3> outDelegate, T1 t1, out TOut @out, T3 t3) { outDelegate(t1, out @out, t3); return false; }
+    public static bool Do<T1, T2, TOut>(VoidOut3Delegate<T1, T2, TOut> outDelegate, T1 t1, T2 t2, out TOut @out) { outDelegate(t1, t2, out @out); return false; }
+    public static bool Do<TOut, T2, T3, T4>(VoidOut1Delegate<TOut, T2, T3, T4> outDelegate, out TOut @out, T2 t2, T3 t3, T4 t4) { outDelegate(out @out, t2, t3, t4); return false; }
+    public static bool Do<T1, TOut, T3, T4>(VoidOut2Delegate<T1, TOut, T3, T4> outDelegate, T1 t1, out TOut @out, T3 t3, T4 t4) { outDelegate(t1, out @out, t3, t4); return false; }
+    public static bool Do<T1, T2, TOut, T4>(VoidOut3Delegate<T1, T2, TOut, T4> outDelegate, T1 t1, T2 t2, out TOut @out, T4 t4) { outDelegate(t1, t2, out @out, t4); return false; }
+    public static bool Do<T1, T2, T3, TOut>(VoidOut4Delegate<T1, T2, T3, TOut> outDelegate, T1 t1, T2 t2, T3 t3, out TOut @out) { outDelegate(t1, t2, t3, out @out); return false; }
+    #endregion
+    #region 有一个out参数且带有返回值的
+    public static bool Do<TOut, TResult>(Out1Delegate<TOut, TResult> outDelegate, out TOut @out) => GetRight(outDelegate(out @out), false);
+    public static bool Do<TOut, T2, TResult>(Out1Delegate<TOut, T2, TResult> outDelegate, out TOut @out, T2 t2) => GetRight(outDelegate(out @out, t2), false);
+    public static bool Do<T1, TOut, TResult>(Out2Delegate<T1, TOut, TResult> outDelegate, T1 t1, out TOut @out) => GetRight(outDelegate(t1, out @out), false);
+    public static bool Do<TOut, T2, T3, TResult>(Out1Delegate<TOut, T2, T3, TResult> outDelegate, out TOut @out, T2 t2, T3 t3) => GetRight(outDelegate(out @out, t2, t3), false);
+    public static bool Do<T1, TOut, T3, TResult>(Out2Delegate<T1, TOut, T3, TResult> outDelegate, T1 t1, out TOut @out, T3 t3) => GetRight(outDelegate(t1, out @out, t3), false);
+    public static bool Do<T1, T2, TOut, TResult>(Out3Delegate<T1, T2, TOut, TResult> outDelegate, T1 t1, T2 t2, out TOut @out) => GetRight(outDelegate(t1, t2, out @out), false);
+    public static bool Do<TOut, T2, T3, T4, TResult>(Out1Delegate<TOut, T2, T3, T4, TResult> outDelegate, out TOut @out, T2 t2, T3 t3, T4 t4) => GetRight(outDelegate(out @out, t2, t3, t4), false);
+    public static bool Do<T1, TOut, T3, T4, TResult>(Out2Delegate<T1, TOut, T3, T4, TResult> outDelegate, T1 t1, out TOut @out, T3 t3, T4 t4) => GetRight(outDelegate(t1, out @out, t3, t4), false);
+    public static bool Do<T1, T2, TOut, T4, TResult>(Out3Delegate<T1, T2, TOut, T4, TResult> outDelegate, T1 t1, T2 t2, out TOut @out, T4 t4) => GetRight(outDelegate(t1, t2, out @out, t4), false);
+    public static bool Do<T1, T2, T3, TOut, TResult>(Out4Delegate<T1, T2, T3, TOut, TResult> outDelegate, T1 t1, T2 t2, T3 t3, out TOut @out) => GetRight(outDelegate(t1, t2, t3, out @out), false);
+    #endregion
     #endregion
     #region ToDo
     public static Action ToDo<T>(Action<T> action, T t)
@@ -1406,45 +1376,44 @@ public static partial class TigerUtils {
     public static Func<TResult> ToGet<TResult, T1, T2, T3, T4, T5, T6, T7, T8, T9>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> action, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9)
         => () => action.Invoke(t1, t2, t3, t4, t5, t6, t7, t8, t9);
     #endregion
-    /// <summary>
-    /// 什么也不做
-    /// </summary>
-    /// <returns>false</returns>
-    public static bool DoNothing() => false;
-    /// <summary>
-    /// 什么也不做
-    /// </summary>
-    /// <returns>false</returns>
-    public static bool Dos(params object?[] objs) {
-        _ = objs;
-        return false;
-    }
-
-    /// <summary>
-    /// 若其中有Action, 则自动执行
-    /// </summary>
-    /// <returns>false</returns>
-    public static bool DosS(params object[] objs) => objs.ForeachDoB(o => o is Action action && Do(action));
-    public static bool DosA(params Action[] actions) => actions.ForeachDo(a => a.Invoke());
-    public static TRight GetRight<TLeft, TRight>(TLeft left, TRight right) {
-        _ = left;
-        return right;
-    }
-
-    public static T GetRightA<T>(Action left, T right) {
-        left();
-        return right;
-    }
-    public static TLeft GetLeft<TLeft, TRight>(TLeft left, TRight right) {
-        _ = right;
-        return left;
-    }
-
-    public static T GetLeftA<T>(T left, Action right) {
-        T result = left;
-        right();
-        return result;
-    }
+    #region ToGetOut
+    #region 带有返回值的
+    public static Func<TOut> ToGetOut<TResult, TOut>(OutDelegate<TOut, TResult> outDelegate) => () => GetRight(outDelegate(out var @out), @out);
+    public static Func<TOut> ToGetOut<TResult, TOut, T2>(Out1Delegate<TOut, T2, TResult> outDelegate, T2 t2) => () => GetRight(outDelegate(out var @out, t2), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, TOut>(Out2Delegate<T1, TOut, TResult> outDelegate, T1 t1) => () => GetRight(outDelegate(t1, out var @out), @out);
+    public static Func<TOut> ToGetOut<TResult, TOut, T2, T3>(Out1Delegate<TOut, T2, T3, TResult> outDelegate, T2 t2, T3 t3) => () => GetRight(outDelegate(out var @out, t2, t3), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, TOut, T3>(Out2Delegate<T1, TOut, T3, TResult> outDelegate, T1 t1, T3 t3) => () => GetRight(outDelegate(t1, out var @out, t3), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, T2, TOut>(Out3Delegate<T1, T2, TOut, TResult> outDelegate, T1 t1, T2 t2) => () => GetRight(outDelegate(t1, t2, out var @out), @out);
+    public static Func<TOut> ToGetOut<TResult, TOut, T2, T3, T4>(Out1Delegate<TOut, T2, T3, T4, TResult> outDelegate, T2 t2, T3 t3, T4 t4) => () => GetRight(outDelegate(out var @out, t2, t3, t4), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, TOut, T3, T4>(Out2Delegate<T1, TOut, T3, T4, TResult> outDelegate, T1 t1, T3 t3, T4 t4) => () => GetRight(outDelegate(t1, out var @out, t3, t4), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, T2, TOut, T4>(Out3Delegate<T1, T2, TOut, T4, TResult> outDelegate, T1 t1, T2 t2, T4 t4) => () => GetRight(outDelegate(t1, t2, out var @out, t4), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, T2, T3, TOut>(Out4Delegate<T1, T2, T3, TOut, TResult> outDelegate, T1 t1, T2 t2, T3 t3) => () => GetRight(outDelegate(t1, t2, t3, out var @out), @out);
+    #endregion
+    #region 不带返回值的
+    public static Func<TOut> ToGetOut<TResult, TOut>(VoidOut1Delegate<TOut> outDelegate) => () => GetRight(Do(outDelegate, out var @out), @out);
+    public static Func<TOut> ToGetOut<TResult, TOut, T2>(VoidOut1Delegate<TOut, T2> outDelegate, T2 t2) => () => GetRight(Do(outDelegate, out var @out, t2), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, TOut>(VoidOut2Delegate<T1, TOut> outDelegate, T1 t1) => () => GetRight(Do(outDelegate, t1, out var @out), @out);
+    public static Func<TOut> ToGetOut<TResult, TOut, T2, T3>(VoidOut1Delegate<TOut, T2, T3> outDelegate, T2 t2, T3 t3) => () => GetRight(Do(outDelegate, out var @out, t2, t3), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, TOut, T3>(VoidOut2Delegate<T1, TOut, T3> outDelegate, T1 t1, T3 t3) => () => GetRight(Do(outDelegate, t1, out var @out, t3), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, T2, TOut>(VoidOut3Delegate<T1, T2, TOut> outDelegate, T1 t1, T2 t2) => () => GetRight(Do(outDelegate, t1, t2, out var @out), @out);
+    public static Func<TOut> ToGetOut<TResult, TOut, T2, T3, T4>(VoidOut1Delegate<TOut, T2, T3, T4> outDelegate, T2 t2, T3 t3, T4 t4) => () => GetRight(Do(outDelegate, out var @out, t2, t3, t4), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, TOut, T3, T4>(VoidOut2Delegate<T1, TOut, T3, T4> outDelegate, T1 t1, T3 t3, T4 t4) => () => GetRight(Do(outDelegate, t1, out var @out, t3, t4), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, T2, TOut, T4>(VoidOut3Delegate<T1, T2, TOut, T4> outDelegate, T1 t1, T2 t2, T4 t4) => () => GetRight(Do(outDelegate, t1, t2, out var @out, t4), @out);
+    public static Func<TOut> ToGetOut<TResult, T1, T2, T3, TOut>(VoidOut4Delegate<T1, T2, T3, TOut> outDelegate, T1 t1, T2 t2, T3 t3) => () => GetRight(Do(outDelegate, t1, t2, t3, out var @out), @out);
+    #endregion
+    #endregion
+    #region ToGetResultAndOut
+    public static Func<(TResult, TOut)> ToGetResultAndOut<TResult, TOut>(OutDelegate<TOut, TResult> outDelegate) => () => (outDelegate(out var @out), @out);
+    public static Func<(TResult, TOut)> ToGetResultAndOut<TResult, TOut, T2>(Out1Delegate<TOut, T2, TResult> outDelegate, T2 t2) => () => (outDelegate(out var @out, t2), @out);
+    public static Func<(TResult, TOut)> ToGetResultAndOut<TResult, T1, TOut>(Out2Delegate<T1, TOut, TResult> outDelegate, T1 t1) => () => (outDelegate(t1, out var @out), @out);
+    public static Func<(TResult, TOut)> ToGetResultAndOut<TResult, TOut, T2, T3>(Out1Delegate<TOut, T2, T3, TResult> outDelegate, T2 t2, T3 t3) => () => (outDelegate(out var @out, t2, t3), @out);
+    public static Func<(TResult, TOut)> ToGetResultAndOut<TResult, T1, TOut, T3>(Out2Delegate<T1, TOut, T3, TResult> outDelegate, T1 t1, T3 t3) => () => (outDelegate(t1, out var @out, t3), @out);
+    public static Func<(TResult, TOut)> ToGetResultAndOut<TResult, T1, T2, TOut>(Out3Delegate<T1, T2, TOut, TResult> outDelegate, T1 t1, T2 t2) => () => (outDelegate(t1, t2, out var @out), @out);
+    public static Func<(TResult, TOut)> ToGetResultAndOut<TResult, TOut, T2, T3, T4>(Out1Delegate<TOut, T2, T3, T4, TResult> outDelegate, T2 t2, T3 t3, T4 t4) => () => (outDelegate(out var @out, t2, t3, t4), @out);
+    public static Func<(TResult, TOut)> ToGetResultAndOut<TResult, T1, TOut, T3, T4>(Out2Delegate<T1, TOut, T3, T4, TResult> outDelegate, T1 t1, T3 t3, T4 t4) => () => (outDelegate(t1, out var @out, t3, t4), @out);
+    public static Func<(TResult, TOut)> ToGetResultAndOut<TResult, T1, T2, TOut, T4>(Out3Delegate<T1, T2, TOut, T4, TResult> outDelegate, T1 t1, T2 t2, T4 t4) => () => (outDelegate(t1, t2, out var @out, t4), @out);
+    public static Func<(TResult, TOut)> ToGetResultAndOut<TResult, T1, T2, T3, TOut>(Out4Delegate<T1, T2, T3, TOut, TResult> outDelegate, T1 t1, T2 t2, T3 t3) => () => (outDelegate(t1, t2, t3, out var @out), @out);
+    #endregion
     #region 流程控制 - 条件
     #region DoIf
     /// <summary>
@@ -2428,6 +2397,47 @@ public static partial class TigerUtils {
         return ref self;
     }
     #endregion
+    #region 杂项
+    /// <summary>
+    /// 什么也不做
+    /// </summary>
+    /// <returns>false</returns>
+    public static bool DoNothing() => false;
+    /// <summary>
+    /// 什么也不做
+    /// </summary>
+    /// <returns>false</returns>
+    public static bool Dos(params object?[] objs) {
+        _ = objs;
+        return false;
+    }
+
+    /// <summary>
+    /// 若其中有Action, 则自动执行
+    /// </summary>
+    /// <returns>false</returns>
+    public static bool DosS(params object[] objs) => objs.ForeachDoB(o => o is Action action && Do(action));
+    public static bool DosA(params Action[] actions) => actions.ForeachDo(a => a.Invoke());
+    public static TRight GetRight<TLeft, TRight>(TLeft left, TRight right) {
+        _ = left;
+        return right;
+    }
+
+    public static T GetRightA<T>(Action left, T right) {
+        left();
+        return right;
+    }
+    public static TLeft GetLeft<TLeft, TRight>(TLeft left, TRight right) {
+        _ = right;
+        return left;
+    }
+
+    public static T GetLeftA<T>(T left, Action right) {
+        T result = left;
+        right();
+        return result;
+    }
+    #endregion
     #endregion
     #region -1作无限
     public static int AddN1(int a, int b) => a == -1 || b == -1 ? -1 : a + b;
@@ -2556,7 +2566,9 @@ public static partial class TigerUtils {
         => (t1, t2, t3, t4, t5, t6, t7, t8, t9) => left(t1, t2, t3, t4, t5, t6, t7, t8, t9) ^ right(t1, t2, t3, t4, t5, t6, t7, t8, t9);
     #endregion
     #endregion
-    #region 反射
+    #region 反射转委托
+    public delegate void RefSetMemberDelegate<T, TField>(ref T self, TField field);
+    public delegate void RefSetMemberDelegate<T>(ref T self, object? field);
     #region 方法的委托
     public static TDelegate GetMethodDelegate<T, TDelegate>(string methodName, BindingFlags flags = BFALL) where TDelegate : Delegate {
         return typeof(T).GetMethod(methodName, flags)!.CreateDelegate<TDelegate>();
@@ -2566,14 +2578,21 @@ public static partial class TigerUtils {
     }
     #endregion
     #region 获取字段的委托
+
+    #region 获取实例字段的委托
     public static Func<T, TField> GetGetFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFI)
         => GetGetFieldDelegate<T, TField>(typeof(T).GetField(fieldName, flags)!);
     public static Func<object, TField> GetGetFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = BFI)
         => GetGetFieldDelegate<TField>(type, type.GetField(fieldName, flags)!);
     public static Func<T, object?> GetGetFieldDelegate<T>(string fieldName, BindingFlags flags = BFI)
-        => GetGetFieldDelegate<T>(typeof(T).GetField(fieldName, flags)!);
+        => GetGetFieldToObjectDelegate<T>(typeof(T), fieldName, flags);
     public static Func<object, object?> GetGetFieldDelegate(Type type, string fieldName, BindingFlags flags = BFI)
         => GetGetFieldDelegate(type, type.GetField(fieldName, flags)!);
+
+    public static Func<object, TField> GetGetFieldFromObjectDelegate<TField>(Type type, string fieldName, BindingFlags flags = BFI)
+        => GetGetFieldDelegate<TField>(type, fieldName, flags);
+    public static Func<T, object?> GetGetFieldToObjectDelegate<T>(Type type, string fieldName, BindingFlags flags = BFI)
+        => GetGetFieldDelegate<T>(type.GetField(fieldName, flags)!);
 
     public static Func<T, TField> GetGetFieldDelegate<T, TField>(FieldInfo field) {
         DynamicMethod method = new("GetField", typeof(TField), [typeof(T)], true);
@@ -2632,6 +2651,7 @@ public static partial class TigerUtils {
         => GetGetFieldDelegate<TField>(field.DeclaringType!, field);
     public static Func<T, object?> GetGetFieldToObjectDelegate<T>(FieldInfo field)
         => GetGetFieldDelegate<T>(field);
+    #endregion
 
     #region 获取静态字段的委托
     public static Func<TField> GetGetStaticFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFS)
@@ -2664,56 +2684,65 @@ public static partial class TigerUtils {
 
     #endregion
     #region 设置字段的委托
-    public static Action<T, TField> GetSetFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFI)
+
+    #region 设置实例字段的委托
+    public static Action<T, TField> GetSetFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFI) where T : class
         => GetSetFieldDelegate<T, TField>(typeof(T).GetField(fieldName, flags)!);
     public static Action<object, TField> GetSetFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = BFI)
         => GetSetFieldDelegate<TField>(type, type.GetField(fieldName, flags)!);
-    public static Action<T, object?> GetSetFieldDelegate<T>(string fieldName, BindingFlags flags = BFI)
-        => GetSetFieldDelegate<T>(typeof(T).GetField(fieldName, flags)!);
+    public static Action<T, object?> GetSetFieldDelegate<T>(string fieldName, BindingFlags flags = BFI) where T : class
+        => GetSetFieldToObjectDelegate<T>(typeof(T), fieldName, flags);
     public static Action<object, object?> GetSetFieldDelegate(Type type, string fieldName, BindingFlags flags = BFI)
         => GetSetFieldDelegate(type, type.GetField(fieldName, flags)!);
+    public static RefSetMemberDelegate<T, TField> GetSetFieldDelegateN<T, TField>(Type type, string fieldName, BindingFlags flags = BFI) where T : struct
+        => GetSetFieldDelegateN<T, TField>(type.GetField(fieldName, flags)!);
+    public static RefSetMemberDelegate<T> GetSetFieldDelegateN<T>(Type type, string fieldName, BindingFlags flags = BFI) where T : struct
+        => GetSetFieldDelegateN<T>(type.GetField(fieldName, flags)!);
 
-    public static Action<T, TField> GetSetFieldDelegate<T, TField>(FieldInfo field) {
+    public static Action<object, TField> GetSetFieldFromObjectDelegate<TField>(Type type, string fieldName, BindingFlags flags = BFI)
+        => GetSetFieldDelegate<TField>(type, fieldName, flags);
+    public static Action<T, object?> GetSetFieldToObjectDelegate<T>(Type type, string fieldName, BindingFlags flags = BFI) where T : class
+        => GetSetFieldDelegate<T>(type.GetField(fieldName, flags)!);
+    public static RefSetMemberDelegate<T> GetSetFieldToObjectDelegateN<T>(Type type, string fieldName, BindingFlags flags = BFI) where T : struct
+        => GetSetFieldDelegateN<T>(type.GetField(fieldName, flags)!);
+
+    public static Action<T, TField> GetSetFieldDelegate<T, TField>(FieldInfo field) where T : class {
         Type type = typeof(T);
         DynamicMethod method = new("SetField", null, [type, typeof(TField)], true);
         var il = method.GetILGenerator();
-        if (type.IsValueType) {
-            il.Emit(SOpCodes.Ldarga, 0);
-        }
-        else {
-            il.Emit(SOpCodes.Ldarg_0);
-        }
+        // if (type.IsValueType)
+        //     il.Emit(SOpCodes.Ldarga, 0);
+        // else
+        il.Emit(SOpCodes.Ldarg_0);
         il.Emit(SOpCodes.Ldarg_1);
         il.Emit(SOpCodes.Stfld, field);
         il.Emit(SOpCodes.Ret);
         return method.CreateDelegate<Action<T, TField>>();
     }
     public static Action<object, TField> GetSetFieldDelegate<TField>(Type type, FieldInfo field) {
-        if (type.IsValueType) {
-            throw new Exception("type should not be value type");
-        }
         DynamicMethod method = new("SetField", null, [typeof(object), typeof(TField)], true);
         var il = method.GetILGenerator();
         il.Emit(SOpCodes.Ldarg_0);
-        il.Emit(SOpCodes.Castclass, type);
+        if (type.IsValueType)
+            il.Emit(SOpCodes.Unbox, type);
+        else
+            il.Emit(SOpCodes.Castclass, type);
         il.Emit(SOpCodes.Ldarg_1);
         il.Emit(SOpCodes.Stfld, field);
         il.Emit(SOpCodes.Ret);
         return method.CreateDelegate<Action<object, TField>>();
     }
-    public static Action<T, object?> GetSetFieldDelegate<T>(FieldInfo field) {
+    public static Action<T, object?> GetSetFieldDelegate<T>(FieldInfo field) where T : class {
         Type type = typeof(T);
         DynamicMethod method = new("SetField", null, [type, typeof(object)], true);
         var il = method.GetILGenerator();
-        if (type.IsValueType) {
-            il.Emit(SOpCodes.Ldarga, 0);
-        }
-        else {
-            il.Emit(SOpCodes.Ldarg_0);
-        }
+        // if (type.IsValueType)
+        //     il.Emit(SOpCodes.Ldarga, 0);
+        // else
+        il.Emit(SOpCodes.Ldarg_0);
         il.Emit(SOpCodes.Ldarg_1);
         if (field.FieldType.IsValueType) {
-            il.Emit(SOpCodes.Unbox, field.FieldType);
+            il.Emit(SOpCodes.Unbox_Any, field.FieldType);
         }
         else {
             il.Emit(SOpCodes.Castclass, field.FieldType);
@@ -2723,16 +2752,16 @@ public static partial class TigerUtils {
         return method.CreateDelegate<Action<T, object?>>();
     }
     public static Action<object, object?> GetSetFieldDelegate(Type type, FieldInfo field) {
-        if (type.IsValueType) {
-            throw new Exception("type should not be value type");
-        }
         DynamicMethod method = new("SetField", null, [typeof(object), typeof(object)], true);
         var il = method.GetILGenerator();
         il.Emit(SOpCodes.Ldarg_0);
-        il.Emit(SOpCodes.Castclass, type);
+        if (type.IsValueType)
+            il.Emit(SOpCodes.Unbox, type);
+        else
+            il.Emit(SOpCodes.Castclass, type);
         il.Emit(SOpCodes.Ldarg_1);
         if (field.FieldType.IsValueType) {
-            il.Emit(SOpCodes.Unbox, field.FieldType);
+            il.Emit(SOpCodes.Unbox_Any, field.FieldType);
         }
         else {
             il.Emit(SOpCodes.Castclass, field.FieldType);
@@ -2741,13 +2770,42 @@ public static partial class TigerUtils {
         il.Emit(SOpCodes.Ret);
         return method.CreateDelegate<Action<object, object?>>();
     }
+    public static RefSetMemberDelegate<T, TField> GetSetFieldDelegateN<T, TField>(FieldInfo field) where T : struct {
+        Type type = typeof(T);
+        DynamicMethod method = new("SetField", null, [type.MakeByRefType(), typeof(TField)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        il.Emit(SOpCodes.Ldarg_1);
+        il.Emit(SOpCodes.Stfld, field);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<RefSetMemberDelegate<T, TField>>();
+    }
+    public static RefSetMemberDelegate<T> GetSetFieldDelegateN<T>(FieldInfo field) where T : struct {
+        Type type = typeof(T);
+        DynamicMethod method = new("SetField", null, [type.MakeByRefType(), typeof(object)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        il.Emit(SOpCodes.Ldarg_1);
+        if (field.FieldType.IsValueType) {
+            il.Emit(SOpCodes.Unbox_Any, field.FieldType);
+        }
+        else {
+            il.Emit(SOpCodes.Castclass, field.FieldType);
+        }
+        il.Emit(SOpCodes.Stfld, field);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<RefSetMemberDelegate<T>>();
+    }
 
     public static Action<object, object?> GetSetFieldDelegate(FieldInfo field)
         => GetSetFieldDelegate(field.DeclaringType!, field);
     public static Action<object, TField> GetSetFieldFromObjectDelegate<TField>(FieldInfo field)
         => GetSetFieldDelegate<TField>(field.DeclaringType!, field);
-    public static Action<T, object?> GetSetFieldToObjectDelegate<T>(FieldInfo field)
+    public static Action<T, object?> GetSetFieldToObjectDelegate<T>(FieldInfo field) where T : class
         => GetSetFieldDelegate<T>(field);
+    public static RefSetMemberDelegate<T> GetSetFieldToObjectDelegateN<T>(FieldInfo field) where T : struct
+        => GetSetFieldDelegateN<T>(field);
+    #endregion
 
     #region 设置静态字段的委托
     public static Action<TField> GetSetStaticFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFS)
@@ -2772,7 +2830,7 @@ public static partial class TigerUtils {
         var il = method.GetILGenerator();
         il.Emit(SOpCodes.Ldarg_0);
         if (field.FieldType.IsValueType) {
-            il.Emit(SOpCodes.Unbox, field.FieldType);
+            il.Emit(SOpCodes.Unbox_Any, field.FieldType);
         }
         else {
             il.Emit(SOpCodes.Castclass, field.FieldType);
@@ -2787,6 +2845,7 @@ public static partial class TigerUtils {
     #region 获得引用字段的委托
     public delegate ref TValue RefInstanceMemberGetter<T, TValue>(T self);
 
+    #region 获取实例引用字段的委托
     public static RefInstanceMemberGetter<T, TField> GetGetRefFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFI)
         => GetGetRefFieldDelegate<T, TField>(typeof(T).GetField(fieldName, flags)!);
     public static RefInstanceMemberGetter<object, TField> GetGetRefFieldDelegate<TField>(Type type, string fieldName, BindingFlags flags = BFI)
@@ -2819,9 +2878,10 @@ public static partial class TigerUtils {
     public static RefInstanceMemberGetter<object, TField> GetGetRefFieldFromObjectDelegate<TField>(FieldInfo field)
         => GetGetRefFieldDelegate<TField>(field.DeclaringType!, field);
     // 必须指定 TField, 否则不能使用 Ref
+    #endregion
 
     #region 获取静态引用字段的委托
-    
+
     public delegate ref TValue RefStaticMemberGetter<TValue>();
 
     public static RefStaticMemberGetter<TField> GetGetStaticRefFieldDelegate<T, TField>(string fieldName, BindingFlags flags = BFS)
@@ -2841,34 +2901,251 @@ public static partial class TigerUtils {
 
     #endregion
     #region 获取属性的委托
+
+    #region 获取实例属性的委托
     public static Func<T, TProperty> GetGetPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = BFI)
         => GetGetPropertyDelegate<T, TProperty>(typeof(T).GetProperty(propertyName, flags)!);
+    public static Func<object, TProperty> GetGetPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = BFI)
+        => GetGetPropertyDelegate<TProperty>(type, type.GetProperty(propertyName, flags)!);
+    public static Func<T, object?> GetGetPropertyDelegate<T>(string propertyName, BindingFlags flags = BFI)
+        => GetGetPropertyDelegate<T>(typeof(T).GetProperty(propertyName, flags)!);
+    public static Func<object, object?> GetGetPropertyDelegate(Type type, string propertyName, BindingFlags flags = BFI)
+        => GetGetPropertyDelegate(type, type.GetProperty(propertyName, flags)!);
+    
+    public static Func<object, TProperty> GetGetPropertyFromObjectDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = BFI)
+        => GetGetPropertyDelegate<TProperty>(type, propertyName, flags);
+    public static Func<T, object?> GetGetPropertyToObjectDelegate<T>(Type type, string propertyName, BindingFlags flags = BFI)
+        => GetGetPropertyDelegate<T>(type.GetProperty(propertyName, flags)!);
+
     public static Func<T, TProperty> GetGetPropertyDelegate<T, TProperty>(PropertyInfo property) {
-        return property.GetMethod!.CreateDelegate<Func<T, TProperty>>();
+        // return property.GetMethod!.CreateDelegate<Func<T, TProperty>>(); // <- 对于 T 是值类型时不行
+        DynamicMethod method = new("GetProperty", typeof(TProperty), [typeof(T)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        il.Emit(SOpCodes.Callvirt, property.GetMethod!);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<Func<T, TProperty>>();
+    }
+    public static Func<object, TProperty> GetGetPropertyDelegate<TProperty>(Type type, PropertyInfo property) {
+        DynamicMethod method = new("GetProperty", typeof(TProperty), [typeof(object)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        if (type.IsValueType) {
+            il.Emit(SOpCodes.Unbox, type);
+        }
+        else {
+            il.Emit(SOpCodes.Castclass, type);
+        }
+        il.Emit(SOpCodes.Callvirt, property.GetMethod!);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<Func<object, TProperty>>();
+    }
+    public static Func<T, object?> GetGetPropertyDelegate<T>(PropertyInfo property) {
+        DynamicMethod method = new("GetProperty", typeof(object), [typeof(T)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        il.Emit(SOpCodes.Callvirt, property.GetMethod!);
+        if (property.PropertyType.IsValueType) {
+            il.Emit(SOpCodes.Box, property.PropertyType);
+        }
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<Func<T, object?>>();
+    }
+    public static Func<object, object?> GetGetPropertyDelegate(Type type, PropertyInfo property) {
+        DynamicMethod method = new("GetProperty", typeof(object), [typeof(object)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        if (type.IsValueType) {
+            il.Emit(SOpCodes.Unbox, type);
+        }
+        else {
+            il.Emit(SOpCodes.Castclass, type);
+        }
+        il.Emit(SOpCodes.Callvirt, property.GetMethod!);
+        if (property.PropertyType.IsValueType) {
+            il.Emit(SOpCodes.Box, property.PropertyType);
+        }
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<Func<object, object?>>();
     }
 
+    public static Func<object, object?> GetGetPropertyDelegate(PropertyInfo property)
+        => GetGetPropertyDelegate(property.DeclaringType!, property);
+    public static Func<object, TProperty> GetGetPropertyFromObjectDelegate<TProperty>(PropertyInfo property)
+        => GetGetPropertyDelegate<TProperty>(property.DeclaringType!, property);
+    public static Func<T, object?> GetGetPropertyToObjectDelegate<T>(PropertyInfo property)
+        => GetGetPropertyDelegate<T>(property);
+    #endregion
+
+    #region 获取静态属性的委托
     public static Func<TProperty> GetGetStaticPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = BFS)
         => GetGetStaticPropertyDelegate<TProperty>(typeof(T), propertyName, flags);
     public static Func<TProperty> GetGetStaticPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = BFS)
         => GetGetStaticPropertyDelegate<TProperty>(type.GetProperty(propertyName, flags)!);
+    public static Func<object?> GetGetStaticPropertyDelegate<T>(string propertyName, BindingFlags flags = BFS)
+        => GetGetStaticPropertyDelegate(typeof(T), propertyName, flags);
+    public static Func<object?> GetGetStaticPropertyDelegate(Type type, string propertyName, BindingFlags flags = BFS)
+        => GetGetStaticPropertyDelegate(type.GetProperty(propertyName, flags)!);
+
     public static Func<TProperty> GetGetStaticPropertyDelegate<TProperty>(PropertyInfo property) {
         return property.GetMethod!.CreateDelegate<Func<TProperty>>();
     }
+    public static Func<object?> GetGetStaticPropertyDelegate(PropertyInfo property) {
+        DynamicMethod method = new("GetProperty", typeof(object), null, true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Call, property.GetMethod!);
+        if (property.PropertyType.IsValueType) {
+            il.Emit(SOpCodes.Box, property.PropertyType);
+        }
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<Func<object>>();
+    }
+    #endregion
+
     #endregion
     #region 设置属性的委托
-    public static Action<T, TProperty> GetSetPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = BFI)
+
+    #region 设置实例属性的委托
+    public static Action<T, TProperty> GetSetPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = BFI) where T : class
         => GetSetPropertyDelegate<T, TProperty>(typeof(T).GetProperty(propertyName, flags)!);
-    public static Action<T, TProperty> GetSetPropertyDelegate<T, TProperty>(PropertyInfo property) {
+    public static Action<object, TProperty> GetSetPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = BFI)
+        => GetSetPropertyDelegate<TProperty>(type, type.GetProperty(propertyName, flags)!);
+    public static Action<T, object?> GetSetPropertyDelegate<T>(string propertyName, BindingFlags flags = BFI) where T : class
+        => GetSetPropertyToObjectDelegate<T>(typeof(T), propertyName, flags);
+    public static Action<object, object?> GetSetPropertyDelegate(Type type, string propertyName, BindingFlags flags = BFI)
+        => GetSetPropertyDelegate(type, type.GetProperty(propertyName, flags)!);
+    public static RefSetMemberDelegate<T, TProperty> GetSetPropertyDelegateN<T, TProperty>(Type type, string propertyName, BindingFlags flags = BFI) where T : struct
+        => GetSetPropertyDelegateN<T, TProperty>(type.GetProperty(propertyName, flags)!);
+    public static RefSetMemberDelegate<T> GetSetPropertyDelegateN<T>(Type type, string propertyName, BindingFlags flags = BFI) where T : struct
+        => GetSetPropertyDelegateN<T>(type.GetProperty(propertyName, flags)!);
+
+    public static Action<object, TProperty> GetSetPropertyFromObjectDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = BFI)
+        => GetSetPropertyDelegate<TProperty>(type, propertyName, flags);
+    public static Action<T, object?> GetSetPropertyToObjectDelegate<T>(Type type, string propertyName, BindingFlags flags = BFI) where T : class
+        => GetSetPropertyDelegate<T>(type.GetProperty(propertyName, flags)!);
+    public static RefSetMemberDelegate<T> GetSetPropertyToObjectDelegateN<T>(Type type, string propertyName, BindingFlags flags = BFI) where T : struct
+        => GetSetPropertyDelegateN<T>(type.GetProperty(propertyName, flags)!);
+
+    public static Action<T, TProperty> GetSetPropertyDelegate<T, TProperty>(PropertyInfo property) where T : class {
         return property.SetMethod!.CreateDelegate<Action<T, TProperty>>();
     }
+    public static Action<object, TProperty> GetSetPropertyDelegate<TProperty>(Type type, PropertyInfo property) {
+        DynamicMethod method = new("SetProperty", null, [typeof(object), typeof(TProperty)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        if (type.IsValueType)
+            il.Emit(SOpCodes.Unbox, type);
+        else
+            il.Emit(SOpCodes.Castclass, type);
+        il.Emit(SOpCodes.Ldarg_1);
+        il.Emit(SOpCodes.Callvirt, property.SetMethod!);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<Action<object, TProperty>>();
+    }
+    public static Action<T, object?> GetSetPropertyDelegate<T>(PropertyInfo property) where T : class {
+        Type type = typeof(T);
+        DynamicMethod method = new("SetProperty", null, [type, typeof(object)], true);
+        var il = method.GetILGenerator();
+        // if (type.IsValueType)
+        //     il.Emit(SOpCodes.Ldarga, 0);
+        // else
+        il.Emit(SOpCodes.Ldarg_0);
+        il.Emit(SOpCodes.Ldarg_1);
+        if (property.PropertyType.IsValueType) {
+            il.Emit(SOpCodes.Unbox_Any, property.PropertyType);
+        }
+        else {
+            il.Emit(SOpCodes.Castclass, property.PropertyType);
+        }
+        il.Emit(SOpCodes.Callvirt, property.SetMethod!);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<Action<T, object?>>();
+    }
+    public static Action<object, object?> GetSetPropertyDelegate(Type type, PropertyInfo property) {
+        DynamicMethod method = new("SetProperty", null, [typeof(object), typeof(object)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        if (type.IsValueType)
+            il.Emit(SOpCodes.Unbox, type);
+        else
+            il.Emit(SOpCodes.Castclass, type);
+        il.Emit(SOpCodes.Ldarg_1);
+        if (property.PropertyType.IsValueType) {
+            il.Emit(SOpCodes.Unbox_Any, property.PropertyType);
+        }
+        else {
+            il.Emit(SOpCodes.Castclass, property.PropertyType);
+        }
+        il.Emit(SOpCodes.Callvirt, property.SetMethod!);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<Action<object, object?>>();
+    }
+    public static RefSetMemberDelegate<T, TProperty> GetSetPropertyDelegateN<T, TProperty>(PropertyInfo property) where T : struct {
+        Type type = typeof(T);
+        DynamicMethod method = new("SetProperty", null, [type.MakeByRefType(), typeof(TProperty)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        il.Emit(SOpCodes.Ldarg_1);
+        il.Emit(SOpCodes.Callvirt, property.SetMethod!);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<RefSetMemberDelegate<T, TProperty>>();
+    }
+    public static RefSetMemberDelegate<T> GetSetPropertyDelegateN<T>(PropertyInfo property) where T : struct {
+        Type type = typeof(T);
+        DynamicMethod method = new("SetProperty", null, [type.MakeByRefType(), typeof(object)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        il.Emit(SOpCodes.Ldarg_1);
+        if (property.PropertyType.IsValueType) {
+            il.Emit(SOpCodes.Unbox_Any, property.PropertyType);
+        }
+        else {
+            il.Emit(SOpCodes.Castclass, property.PropertyType);
+        }
+        il.Emit(SOpCodes.Callvirt, property.SetMethod!);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<RefSetMemberDelegate<T>>();
+    }
 
+    public static Action<object, object?> GetSetPropertyDelegate(PropertyInfo property)
+        => GetSetPropertyDelegate(property.DeclaringType!, property);
+    public static Action<object, TProperty> GetSetPropertyFromObjectDelegate<TProperty>(PropertyInfo property)
+        => GetSetPropertyDelegate<TProperty>(property.DeclaringType!, property);
+    public static Action<T, object?> GetSetPropertyToObjectDelegate<T>(PropertyInfo property) where T : class
+        => GetSetPropertyDelegate<T>(property);
+    public static RefSetMemberDelegate<T> GetSetPropertyToObjectDelegateN<T>(PropertyInfo property) where T : struct
+        => GetSetPropertyDelegateN<T>(property);
+    #endregion
+
+    #region 设置静态属性的委托
     public static Action<TProperty> GetSetStaticPropertyDelegate<T, TProperty>(string propertyName, BindingFlags flags = BFS)
         => GetSetStaticPropertyDelegate<TProperty>(typeof(T), propertyName, flags);
     public static Action<TProperty> GetSetStaticPropertyDelegate<TProperty>(Type type, string propertyName, BindingFlags flags = BFS)
         => GetSetStaticPropertyDelegate<TProperty>(type.GetProperty(propertyName, flags)!);
+    public static Action<object?> GetSetStaticPropertyDelegate<T>(string propertyName, BindingFlags flags = BFS)
+        => GetSetStaticPropertyDelegate(typeof(T), propertyName, flags);
+    public static Action<object?> GetSetStaticPropertyDelegate(Type type, string propertyName, BindingFlags flags = BFS)
+        => GetSetStaticPropertyDelegate(type.GetProperty(propertyName, flags)!);
+
     public static Action<TProperty> GetSetStaticPropertyDelegate<TProperty>(PropertyInfo property) {
         return property.SetMethod!.CreateDelegate<Action<TProperty>>();
     }
+    public static Action<object?> GetSetStaticPropertyDelegate(PropertyInfo property) {
+        DynamicMethod method = new("SetProperty", null, [typeof(object)], true);
+        var il = method.GetILGenerator();
+        il.Emit(SOpCodes.Ldarg_0);
+        if (property.PropertyType.IsValueType) {
+            il.Emit(SOpCodes.Unbox_Any, property.PropertyType);
+        }
+        else {
+            il.Emit(SOpCodes.Castclass, property.PropertyType);
+        }
+        il.Emit(SOpCodes.Call, property.SetMethod!);
+        il.Emit(SOpCodes.Ret);
+        return method.CreateDelegate<Action<object?>>();
+    }
+    #endregion
+
     #endregion
     #endregion
     #region Clone
@@ -3116,6 +3393,37 @@ public static partial class TigerClasses {
     public delegate T Alter<T>(T source);
     public delegate TResult Alter<TSource, TResult>(TSource source);
     public delegate void RefAction<T>(ref T arg);
+    #region out
+    public delegate TResult OutDelegate<TOut, TResult>(out TOut @out);
+    public delegate TResult Out1Delegate<TOut, TResult>(out TOut @out);
+    public delegate TResult OutDelegate<T1, TOut, TResult>(T1 t1, out TOut @out);
+    public delegate TResult Out1Delegate<TOut, T2, TResult>(out TOut @out, T2 t2);
+    public delegate TResult Out2Delegate<T1, TOut, TResult>(T1 t1, out TOut @out);
+    public delegate TResult OutDelegate<T1, T2, TOut, TResult>(T1 t1, T2 t2, out TOut @out);
+    public delegate TResult Out1Delegate<TOut, T2, T3, TResult>(out TOut @out, T2 t2, T3 t3);
+    public delegate TResult Out2Delegate<T1, TOut, T3, TResult>(T1 t1, out TOut @out, T3 t3);
+    public delegate TResult Out3Delegate<T1, T2, TOut, TResult>(T1 t1, T2 t2, out TOut @out);
+    public delegate TResult OutDelegate<T1, T2, T3, TOut, TResult>(T1 t1, T2 t2, T3 t3, out TOut @out);
+    public delegate TResult Out1Delegate<TOut, T2, T3, T4, TResult>(out TOut @out, T2 t2, T3 t3, T4 t4);
+    public delegate TResult Out2Delegate<T1, TOut, T3, T4, TResult>(T1 t1, out TOut @out, T3 t3, T4 t4);
+    public delegate TResult Out3Delegate<T1, T2, TOut, T4, TResult>(T1 t1, T2 t2, out TOut @out, T4 t4);
+    public delegate TResult Out4Delegate<T1, T2, T3, TOut, TResult>(T1 t1, T2 t2, T3 t3, out TOut @out);
+    
+    public delegate void VoidOutDelegate<TOut>(out TOut @out);
+    public delegate void VoidOut1Delegate<TOut>(out TOut @out);
+    public delegate void VoidOutDelegate<T1, TOut>(T1 t1, out TOut @out);
+    public delegate void VoidOut1Delegate<TOut, T2>(out TOut @out, T2 t2);
+    public delegate void VoidOut2Delegate<T1, TOut>(T1 t1, out TOut @out);
+    public delegate void VoidOutDelegate<T1, T2, TOut>(T1 t1, T2 t2, out TOut @out);
+    public delegate void VoidOut1Delegate<TOut, T2, T3>(out TOut @out, T2 t2, T3 t3);
+    public delegate void VoidOut2Delegate<T1, TOut, T3>(T1 t1, out TOut @out, T3 t3);
+    public delegate void VoidOut3Delegate<T1, T2, TOut>(T1 t1, T2 t2, out TOut @out);
+    public delegate void VoidOutDelegate<T1, T2, T3, TOut>(T1 t1, T2 t2, T3 t3, out TOut @out);
+    public delegate void VoidOut1Delegate<TOut, T2, T3, T4>(out TOut @out, T2 t2, T3 t3, T4 t4);
+    public delegate void VoidOut2Delegate<T1, TOut, T3, T4>(T1 t1, out TOut @out, T3 t3, T4 t4);
+    public delegate void VoidOut3Delegate<T1, T2, TOut, T4>(T1 t1, T2 t2, out TOut @out, T4 t4);
+    public delegate void VoidOut4Delegate<T1, T2, T3, TOut>(T1 t1, T2 t2, T3 t3, out TOut @out);
+    #endregion
     #endregion
     #region 几何
     public struct DirectedLineD1(float start, float end) {
@@ -6160,6 +6468,8 @@ public static partial class TigerExtensions {
             dictionary.TryAdd(key, value);
         }
     }
+    public static Action<TValue> AddFP<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key) where TKey : notnull => v => dictionary.Add(key, v);
+    public static Action<TKey> AddFPR<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TValue value) where TKey : notnull => k => dictionary.Add(k, value);
     #endregion
     #region ref相关拓展
     //ref拓展不知道为什么只能给值类型用
