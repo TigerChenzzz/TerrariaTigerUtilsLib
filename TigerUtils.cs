@@ -15,6 +15,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using SOpCode = System.Reflection.Emit.OpCode;
 using SOpCodes = System.Reflection.Emit.OpCodes;
 
 namespace TigerUtilsLib;
@@ -3198,6 +3199,85 @@ public static partial class TigerUtils {
     /// 保证类型 <paramref name="type"/> 的静态构造已被执行, 如果有的话 (静态构造只会执行一次)
     /// </summary>
     public static void InvokeStaticConstructor(Type type) => type.TypeInitializer?.Invoke(null, null);
+    public static T ThrowIfNull<T>([NotNull] T? self, string? message = null) {
+        if (self == null) {
+            throw new NullReferenceException(message);
+        }
+        return self;
+    }
+    public static TDelegate CreateMethod<TDelegate>(string name, Action<ILGenerator> generate) where TDelegate : Delegate {
+        var invoke = typeof(TDelegate).GetMethod("Invoke", BFI)
+            ?? throw new ArgumentException("TDelegate must have exact one instance \"Invoke\" method");
+        DynamicMethod method = new(name, invoke.ReturnType, invoke.GetParameters().Select(p => p.ParameterType).ToArray(), true);
+        var il = method.GetILGenerator();
+        generate(il);
+        return method.CreateDelegate<TDelegate>();
+    }
+    public static TDelegate CreateMethod<TDelegate>(string name, IEnumerable<(SOpCode opCode, object? operand)> instrs) where TDelegate : Delegate {
+        return CreateMethod<TDelegate>(name, il => {
+            foreach (var instr in instrs) {
+                var opCode = instr.opCode;
+                switch (instr.operand) {
+                case null:
+                    il.Emit(opCode);
+                    break;
+                case Type cls:
+                    il.Emit(opCode, cls);
+                    break;
+                case string str:
+                    il.Emit(opCode, str);
+                    break;
+                case float arg:
+                    il.Emit(opCode, arg);
+                    break;
+                case sbyte arg:
+                    il.Emit(opCode, arg);
+                    break;
+                case MethodInfo meth:
+                    il.Emit(opCode, meth);
+                    break;
+                case FieldInfo field:
+                    il.Emit(opCode, field);
+                    break;
+                case Label[] labels:
+                    il.Emit(opCode, labels);
+                    break;
+                case SignatureHelper signature:
+                    il.Emit(opCode, signature);
+                    break;
+                case LocalBuilder local:
+                    il.Emit(opCode, local);
+                    break;
+                case ConstructorInfo con:
+                    il.Emit(opCode, con);
+                    break;
+                case long arg:
+                    il.Emit(opCode, arg);
+                    break;
+                case int arg:
+                    il.Emit(opCode, arg);
+                    break;
+                case short arg:
+                    il.Emit(opCode, arg);
+                    break;
+                case double arg:
+                    il.Emit(opCode, arg);
+                    break;
+                case byte arg:
+                    il.Emit(opCode, arg);
+                    break;
+                case Label label:
+                    il.Emit(opCode, label);
+                    break;
+                default:
+                    throw new ArgumentException("Not supported type of operand: " + instr.operand.GetType());
+                }
+            }
+        });
+    }
+    public static TDelegate CreateMethod<TDelegate>(string name, params (SOpCode opCode, object? operand)[] instrs) where TDelegate : Delegate {
+        return CreateMethod<TDelegate>(name, (IEnumerable<(SOpCode opCode, object? operand)>)instrs);
+    }
     #endregion
 }
 
@@ -3206,6 +3286,36 @@ public static partial class TigerClasses {
         public T Value = value;
         public static implicit operator T(ValueHolder<T> holder) => holder.Value;
         public static implicit operator ValueHolder<T>(T value) => new(value);
+    }
+    // 对标 Nullable, 但是适用于任意类型, 暂时没有处理 Equals 相关的内容
+    public readonly struct Existable<T> {
+        public Existable(T value) {
+            this.value = value;
+            hasValue = true;
+        }
+        public Existable() { }
+        private readonly bool hasValue;
+        private readonly T? value;
+        public readonly bool HasValue => hasValue;
+        public readonly T Value {
+            get {
+                if (!hasValue) {
+                    throw new InvalidOperationException("No value in Existable!");
+                }
+                return value!;
+            }
+        }
+        public readonly T? GetValueOrDefault() => value;
+        [return: NotNullIfNotNull(nameof(defaultValue))]
+        public readonly T? GetValueOrDefault(T? defaultValue) {
+            return !hasValue ? defaultValue : value;
+        }
+        public override string ToString() {
+            if (!hasValue) {
+                return "";
+            }
+            return value?.ToString() ?? "";
+        }
     }
     /// <summary>
     /// Value that is defaulted when got
@@ -4359,9 +4469,171 @@ public static partial class TigerExtensions {
     public static MethodInfo GetMethodInfo<T>(string methodName, BindingFlags flags)
         => typeof(T).GetMethod(methodName, flags);
 #endif
+    #region DeclareLocal
     public static VariableDefinition DeclareLocal<T>(this ILContext il) => DeclareLocal(il, typeof(T));
     public static VariableDefinition DeclareLocal(this ILContext il, Type type)
          => new VariableDefinition(il.Method.DeclaringType.Module.ImportReference(type)).WithAction(il.Body.Variables.Add);
+    #endregion
+    #region type.GetMethod
+    public static MethodInfo? GetMethod<TDelegate>(this Type type, string name, BindingFlags bindingAttr = BFALL, bool matchGeneric = false) => GetMethod(type, name, typeof(TDelegate), bindingAttr, matchGeneric);
+    public static MethodInfo? GetMethod(this Type type, string name, Type delegateType, BindingFlags bindingAttr = BFALL, bool matchGeneric = false) {
+
+        if (delegateType.ContainsGenericParameters) {
+            throw new ArgumentException("delegateType should not contains generic parameters", nameof(delegateType));
+        }
+        var invoke = delegateType.GetMethod("Invoke", BFI)
+                ?? throw new ArgumentException("delegateType must have exact one Invoke method");
+        var parameters = invoke.GetParameters();
+        ParameterModifier modifier = new(parameters.Length);
+        for (int i = 0; i < parameters.Length; ++i) {
+            var parameter = parameters[i];
+            if (parameter.IsIn || parameter.IsOut || parameter.IsRetval) {
+                modifier[i] = true;
+            }
+        }
+        var result = type.GetMethod(name, bindingAttr, binder: null, invoke.GetParameters().Select(p => p.ParameterType).ToArray(), modifiers: [modifier]);
+        if (result != null || !matchGeneric) {
+            return result;
+        }
+        var genericTypes = delegateType.GenericTypeArguments;
+        foreach (var method in type.GetMethods(bindingAttr)) {
+            // 跳过名字不同的方法.
+            if (method.Name != name) {
+                continue;
+            }
+            // 对于方法和方法所在类都不是泛型时在上面已经作出了判断, 直接跳过.
+            if (!method.ContainsGenericParameters) // 包括所在类有泛型和此方法本身有泛型
+            {
+                continue;
+            }
+            // 获取方法的参数列表
+            var methodParameters = method.GetParameters();
+            // 若方法参数个数和委托的对不上, 则跳过
+            if ((method.IsStatic ? methodParameters.Length : methodParameters.Length + 1) != parameters.Length) {
+                continue;
+            }
+            var realTypeGenericTypes = type.GetGenericArguments();
+            var realMethodGenericTypes = method.GetGenericArguments();
+            var typeGenericTypes = type.IsGenericTypeDefinition ? realTypeGenericTypes : []; // <- 这会处理嵌套类
+            var methodGenericTypes = method.IsGenericMethodDefinition ? realMethodGenericTypes : [];
+            bool mismatched = false;
+            Type?[] matchedTypeGenericTypes = new Type?[typeGenericTypes.Length];
+            Type?[] matchedMethodGenericTypes = new Type?[methodGenericTypes.Length];
+            for (int i = 0; i < methodParameters.Length; ++i) {
+                var methodParameterType = methodParameters[i].ParameterType;
+                var parameterType = parameters[i].ParameterType;
+                // 如果和委托的参数匹配, 则继续判断下一个参数.
+                if (methodParameterType == parameterType) {
+                    continue;
+                }
+                // 如果不包含泛型参数, 则判断为不匹配, 直接跳出循环.
+                if (!methodParameterType.ContainsGenericParameters) {
+                    mismatched = true;
+                    break;
+                }
+                // 如果是纯粹的泛型类型 (比如 T, 而不是 List<T> 等)...
+                if (methodParameterType.IsGenericParameter) {
+                    Type? nullRef = null;
+                    ref Type? matchedType = ref nullRef;
+                    // 首先在类型的泛型参数中寻找.
+                    var index = typeGenericTypes.FindIndexOf(t => t == methodParameterType);
+                    // 如果找到了, 那么对应就类型的泛型参数.
+                    if (index >= 0) {
+                        matchedType = ref matchedTypeGenericTypes[index];
+                    }
+                    // 如果在类型的泛型参数中未找到...
+                    else {
+                        // 那么在方法的泛型参数中寻找.
+                        index = methodGenericTypes.FindIndexOf(t => t == methodParameterType);
+                        // 如果未找到, 那么无法匹配此泛型 (理应不应该出现这种情况), 直接判断为不匹配并跳出循环.
+                        if (index < 0) {
+                            mismatched = true;
+                            break;
+                        }
+                        // 找到的话则对应的方法的泛型参数.
+                        matchedType = ref matchedMethodGenericTypes[index];
+                    }
+                    // 如果对应参数已存在...
+                    if (matchedType != null) {
+                        // 匹配则继续.
+                        if (matchedType == parameterType) {
+                            continue;
+                        }
+                        // 不匹配则直接结束 (不应该出现).
+                        mismatched = true;
+                        break;
+                    }
+                    // 如果还没有对应参数, 则填上
+                    matchedType = parameterType;
+                    continue;
+                }
+                // TODO: 像是 List<T> 这种东西的处理
+            }
+            // 如果有参数无法匹配, 则继续判断下一个方法
+            if (mismatched) {
+                continue;
+            }
+
+            Type newType;
+            // 如果已完全匹配, 则按匹配的参数填入泛型中, 并返回填好参数的方法
+            if (matchedTypeGenericTypes.All(t => t != null) && matchedMethodGenericTypes.All(t => t != null)) {
+                if (type.IsGenericTypeDefinition) {
+                    newType = type.MakeGenericType(matchedTypeGenericTypes!);
+                    return GetMethod(newType, name, delegateType, bindingAttr, true);
+                }
+                return method.MakeGenericMethod(matchedMethodGenericTypes!);
+            }
+
+            // 如果不能完全匹配, 则转为尝试使用委托类型的泛型参数
+            var delegateGenericTypeArguments = delegateType.GenericTypeArguments; // <- 这个只会获取填实了的类型参数, 而 GetGenericArguments 则不管填不填实都会获取到, 虽然在前面限制了 !delegateType.ContainsGenericParameters 让它们在这里没有区别就是了
+
+            // 尝试将委托类型的泛型参数按对应长度填入类型和方法的泛型参数中, 如果不能则继续判断下一个方法
+            if (type.IsGenericTypeDefinition) {
+                if (method.IsGenericMethodDefinition) {
+                    if (realTypeGenericTypes.Length + realMethodGenericTypes.Length != delegateGenericTypeArguments.Length) {
+                        continue;
+                    }
+                    newType = type.MakeGenericType(delegateGenericTypeArguments[..realTypeGenericTypes.Length]);
+                    return GetMethod(newType, name, delegateType, bindingAttr, true);
+                }
+                if (realTypeGenericTypes.Length == delegateGenericTypeArguments.Length) {
+                    newType = type.MakeGenericType(delegateGenericTypeArguments);
+                    return GetMethod(newType, name, delegateType, bindingAttr, true);
+                }
+                if (realTypeGenericTypes.Length + realMethodGenericTypes.Length == delegateGenericTypeArguments.Length) {
+                    newType = type.MakeGenericType(delegateGenericTypeArguments[..realTypeGenericTypes.Length]);
+                    return GetMethod(newType, name, delegateType, bindingAttr, true);
+                }
+                continue;
+            }
+            if (!method.IsGenericMethodDefinition) {
+                continue;
+            }
+            if (realMethodGenericTypes.Length == delegateGenericTypeArguments.Length) {
+                result = method.MakeGenericMethod(delegateGenericTypeArguments);
+            }
+            else if (realTypeGenericTypes.Length + realMethodGenericTypes.Length == delegateGenericTypeArguments.Length) {
+                result = method.MakeGenericMethod(delegateGenericTypeArguments[realTypeGenericTypes.Length..]);
+            }
+            else {
+                continue;
+            }
+
+            // 检查填好类型参数的结果中的参数是否可以和委托中的参数对上, 如果完全对的上则返回结果, 否则继续判断下一个方法
+            var resultParameters = result.GetParameters();
+            if (resultParameters.Length != parameters.Length) {
+                continue;
+            }
+            for (int i = 0; i < resultParameters.Length; ++i) {
+                if (resultParameters[i].ParameterType != parameters[i].ParameterType) {
+                    continue;
+                }
+            }
+            return result;
+        }
+        return null;
+    }
+    #endregion
     #endregion
 
     #region Vector2  拓展
