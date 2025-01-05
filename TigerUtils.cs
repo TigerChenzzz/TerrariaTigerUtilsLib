@@ -11,10 +11,14 @@ using MonoMod.RuntimeDetour;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Runtime.CompilerServices;
+using ArraySortHelper = TigerUtilsLib.Reflections.SystemReflections.System.Collections.Generic.ArraySortHelper;
+using RList = TigerUtilsLib.Reflections.SystemReflections.System.Collections.Generic.List;
 using SOpCode = System.Reflection.Emit.OpCode;
 using SOpCodes = System.Reflection.Emit.OpCodes;
 
@@ -3149,62 +3153,7 @@ public static partial class TigerUtils {
 
     #endregion
     #endregion
-    #region Clone
-    private static Lazy<Func<object, object>> memberwiseCloneFunc = new(() => GetMethodDelegate<object, Func<object, object>>("MemberwiseClone"));
-    public static T ShallowClone<T>(T obj) where T : notnull {
-        if (obj is ICloneable cloneable) {
-            return (T)cloneable.Clone();
-        }
-        return (T)memberwiseCloneFunc.Value(obj);
-    }
-    #endregion
-    #region 杂项
-    public static void Swap<T>(ref T left, ref T right) => (left, right) = (right, left);
-    /// <summary>
-    /// Undo, Dispose and set to null
-    /// </summary>
-    public static void FullyUndoILHook(ref ILHook? ilHook) {
-        if (ilHook == null) {
-            return;
-        }
-        ilHook.Undo();
-        ilHook.Dispose();
-        ilHook = null;
-    }
-    /// <summary>
-    /// Undo, Dispose and set to null
-    /// </summary>
-    public static void FullyUndoHook(ref Hook? hook) {
-        if (hook == null) {
-            return;
-        }
-        hook.Undo();
-        hook.Dispose();
-        hook = null;
-    }
-    public static T Instance<T>() => StaticInstance<T>.Value;
-    public static void SetInstance<T>(T value) => StaticInstance<T>.Set(value);
-    public static KeyValuePair<TKey, TValue> NewPair<TKey, TValue>(TKey key, TValue value) => new(key, value);
-    public static ValueHolder<T> NewHolder<T>(T value) => new(value);
-    public static IEqualityComparer<T> NewEqualityComparer<T>(Func<T?, T?, bool> equals, Func<T, int> getHashCode) {
-        return new CustomEqualityComparer<T>(equals, getHashCode);
-    }
-    public static IComparer<T> NewComparer<T>(Func<T?, T?, int> compare) => new CustomComparer<T>(compare);
-    public static int ToInt(bool @bool) => @bool ? 1 : 0;
-    /// <summary>
-    /// 保证类型 <typeparamref name="T"/> 的静态构造已被执行, 如果有的话 (静态构造只会执行一次)
-    /// </summary>
-    public static void InvokeStaticConstructor<T>() => InvokeStaticConstructor(typeof(T));
-    /// <summary>
-    /// 保证类型 <paramref name="type"/> 的静态构造已被执行, 如果有的话 (静态构造只会执行一次)
-    /// </summary>
-    public static void InvokeStaticConstructor(Type type) => type.TypeInitializer?.Invoke(null, null);
-    public static T ThrowIfNull<T>([NotNull] T? self, string? message = null) {
-        if (self == null) {
-            throw new NullReferenceException(message);
-        }
-        return self;
-    }
+    #region 创建方法 CreateMethod
     public static TDelegate CreateMethod<TDelegate>(string name, Action<ILGenerator> generate) where TDelegate : Delegate {
         var invoke = typeof(TDelegate).GetMethod("Invoke", BFI)
             ?? throw new ArgumentException("TDelegate must have exact one instance \"Invoke\" method");
@@ -3278,6 +3227,70 @@ public static partial class TigerUtils {
     public static TDelegate CreateMethod<TDelegate>(string name, params (SOpCode opCode, object? operand)[] instrs) where TDelegate : Delegate {
         return CreateMethod<TDelegate>(name, (IEnumerable<(SOpCode opCode, object? operand)>)instrs);
     }
+    #endregion
+    #region Clone
+    private static Lazy<Func<object, object>> memberwiseCloneFunc = new(() => GetMethodDelegate<object, Func<object, object>>("MemberwiseClone"));
+    public static T ShallowClone<T>(T obj) where T : notnull {
+        if (obj is ICloneable cloneable) {
+            return (T)cloneable.Clone();
+        }
+        return (T)memberwiseCloneFunc.Value(obj);
+    }
+    #endregion
+    #region Null 相关
+    public static T ThrowIfNull<T>([NotNull] T? self, string? message = null) {
+        if (self == null) {
+            throw new NullReferenceException(message);
+        }
+        return self;
+    }
+#pragma warning disable CS8777 // 退出时，参数必须具有非 null 值。
+    // 用来跟踪哪里使用了 xxx!
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static T NotNull<T>([NotNull] T? self) => self!;
+#pragma warning restore CS8777 // 退出时，参数必须具有非 null 值。
+    #endregion
+    #region 杂项
+    public static void Swap<T>(ref T left, ref T right) => (left, right) = (right, left);
+    /// <summary>
+    /// Undo, Dispose and set to null
+    /// </summary>
+    public static void FullyUndoILHook(ref ILHook? ilHook) {
+        if (ilHook == null) {
+            return;
+        }
+        ilHook.Undo();
+        ilHook.Dispose();
+        ilHook = null;
+    }
+    /// <summary>
+    /// Undo, Dispose and set to null
+    /// </summary>
+    public static void FullyUndoHook(ref Hook? hook) {
+        if (hook == null) {
+            return;
+        }
+        hook.Undo();
+        hook.Dispose();
+        hook = null;
+    }
+    public static T Instance<T>() => StaticInstance<T>.Value;
+    public static void SetInstance<T>(T value) => StaticInstance<T>.Set(value);
+    public static KeyValuePair<TKey, TValue> NewPair<TKey, TValue>(TKey key, TValue value) => new(key, value);
+    public static ValueHolder<T> NewHolder<T>(T value) => new(value);
+    public static IEqualityComparer<T> NewEqualityComparer<T>(Func<T?, T?, bool> equals, Func<T, int> getHashCode) {
+        return new CustomEqualityComparer<T>(equals, getHashCode);
+    }
+    public static IComparer<T> NewComparer<T>(Func<T?, T?, int> compare) => new CustomComparer<T>(compare);
+    public static int ToInt(bool @bool) => @bool ? 1 : 0;
+    /// <summary>
+    /// 保证类型 <typeparamref name="T"/> 的静态构造已被执行, 如果有的话 (静态构造只会执行一次)
+    /// </summary>
+    public static void InvokeStaticConstructor<T>() => InvokeStaticConstructor(typeof(T));
+    /// <summary>
+    /// 保证类型 <paramref name="type"/> 的静态构造已被执行, 如果有的话 (静态构造只会执行一次)
+    /// </summary>
+    public static void InvokeStaticConstructor(Type type) => type.TypeInitializer?.Invoke(null, null);
     #endregion
 }
 
@@ -4209,6 +4222,10 @@ public static partial class TigerClasses {
     }
     public class CustomComparer<T>(Func<T?, T?, int> compare) : IComparer<T> {
         public int Compare(T? x, T? y) => compare(x, y);
+    }
+    public class ComparisonComparer<T>(Comparison<T> comparison) : IComparer<T> {
+        private readonly Comparison<T> _comparison = comparison;
+        public int Compare(T? x, T? y) => _comparison(NotNull(x), NotNull(y));
     }
     #endregion
 }
@@ -6246,6 +6263,39 @@ public static partial class TigerExtensions {
         list[index] = value;
     }
     #endregion
+    #region ToSpan
+    public static Span<T> ToSpan<T>(this T[]? array) => array;
+    public static Span<T> ToSpan<T>(this T[]? array, Range range) {
+        if (array == null) {
+            return default;
+        }
+        var (offset, length) = range.GetOffsetAndLengthSafe(array.Length);
+        return new(array, offset, length);
+    }
+    public static Span<T> ToSpan<T>(this List<T>? list) {
+        if (list is null) {
+            return default;
+        }
+        var items = RList.GetItems(list);
+        var size = RList.GetSize(list);
+        Debug.Assert(items is not null);
+        Debug.Assert((uint)size <= (uint)items.Length);
+        Debug.Assert(items.GetType() == typeof(T[]));
+        return new(items, 0, size);
+    }
+    public static Span<T> ToSpan<T>(this List<T> list, Range range) {
+        if (list is null) {
+            return default;
+        }
+        var items = RList.GetItems(list);
+        var size = RList.GetSize(list);
+        Debug.Assert(items is not null);
+        Debug.Assert((uint)size <= (uint)items.Length);
+        Debug.Assert(items.GetType() == typeof(T[]));
+        var (offset, length) = range.GetOffsetAndLengthSafe(size);
+        return new(items, offset, length);
+    }
+    #endregion
     #region 杂项
     public static void ReverseSelf<T>(this IList<T> list) {
         int m = list.Count / 2;
@@ -6742,6 +6792,16 @@ public static partial class TigerExtensions {
     }
     public static Action<TValue> AddFP<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key) where TKey : notnull => v => dictionary.Add(key, v);
     public static Action<TKey> AddFPR<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TValue value) where TKey : notnull => k => dictionary.Add(k, value);
+    #endregion
+    #region System.Range 拓展
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static (int Offset, int Length) GetOffsetAndLengthSafe(this Range range, int length) {
+        int left = range.Start.GetOffset(length);
+        int right = range.End.GetOffset(length);
+        left.ClampTo(0, length);
+        right.ClampTo(left, length);
+        return (left, right - left);
+    }
     #endregion
     #region ref相关拓展
     //ref拓展不知道为什么只能给值类型用
