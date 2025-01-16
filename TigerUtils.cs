@@ -17,10 +17,12 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
-using ArraySortHelper = TigerUtilsLib.Reflections.SystemReflections.System.Collections.Generic.ArraySortHelper;
 using RList = TigerUtilsLib.Reflections.SystemReflections.System.Collections.Generic.List;
 using SOpCode = System.Reflection.Emit.OpCode;
 using SOpCodes = System.Reflection.Emit.OpCodes;
+using Vector2 = Microsoft.Xna.Framework.Vector2;
+using Vector3 = Microsoft.Xna.Framework.Vector3;
+using Vector4 = Microsoft.Xna.Framework.Vector4;
 
 namespace TigerUtilsLib;
 
@@ -3278,6 +3280,7 @@ public static partial class TigerUtils {
     public static void SetInstance<T>(T value) => StaticInstance<T>.Set(value);
     public static KeyValuePair<TKey, TValue> NewPair<TKey, TValue>(TKey key, TValue value) => new(key, value);
     public static ValueHolder<T> NewHolder<T>(T value) => new(value);
+    public static Existable<T> NewExistable<T>(T value) => new(value);
     public static IEqualityComparer<T> NewEqualityComparer<T>(Func<T?, T?, bool> equals, Func<T, int> getHashCode) {
         return new CustomEqualityComparer<T>(equals, getHashCode);
     }
@@ -4817,6 +4820,14 @@ public static partial class TigerExtensions {
             yield return (index++, t);
         }
     }
+    public static IEnumerable<TResult> Filter<TSource, TResult>(this IEnumerable<TSource> enumerable, Func<TSource, Existable<TResult>> filter) {
+        foreach (var t in enumerable) {
+            var existable = filter(t);
+            if (existable.HasValue) {
+                yield return existable.Value;
+            }
+        }
+    }
     public static IEnumerable<TResult> SelectWhere<TSource, TResult>(this IEnumerable<TSource> enumerable, Func<TSource, ValueHolder<TResult>?> selector) {
         foreach (TSource t in enumerable) {
             var value = selector(t);
@@ -5924,6 +5935,16 @@ public static partial class TigerExtensions {
             list.Remove(r);
         }
     }
+    #endregion
+    #region 特殊列表操作
+    #region 元组列表
+    public static void Add<T1, T2>(this List<(T1, T2)> list, T1 item1, T2 item2) {
+        list.Add((item1, item2));
+    }
+    public static void Add<T1, T2>(this ICollection<(T1, T2)> list, T1 item1, T2 item2) {
+        list.Add((item1, item2));
+    }
+    #endregion
     #endregion
     #region Length相关
     #region ClampLength

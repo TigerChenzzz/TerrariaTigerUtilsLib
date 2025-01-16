@@ -1909,75 +1909,177 @@ public static partial class TigerExtensions {
         }
     }
 
-    public static void SaveDictionaryData<T>(this TagCompound tag, string key, Dictionary<string, T> dictionary, Action<T, TagCompound> toTag) {
-        tag.SaveDictionaryData(key, dictionary, t => new TagCompound().WithAction(tag => toTag(t, tag)));
-    }
-    public static void SaveDictionaryData<T>(this TagCompound tag, string key, Dictionary<string, T> dictionary, Func<T, TagCompound?> toTag) {
-        TagCompound data = [.. dictionary.SelectWhere(
-            p => toTag(p.Value).Transfer(
-                t => t?.Count > 0 ?
-                NewHolder(NewPair(p.Key, (object)t)) :
-                null)
-        )];
-        if (data.Count > 0) {
-            tag[key] = data;
+    #region SaveDictionaryData
+    public static void SaveDictionaryData<T>(this TagCompound tag, string key, Dictionary<string, T> dictionary) {
+        TagCompound data = [];
+        foreach (var (k, v) in dictionary) {
+            data[k] = v;
         }
-    }
-    public static void LoadDictionaryData<T>(this TagCompound tag, string key, Dictionary<string, T> dictionary, Action<T, TagCompound> fromTag) {
-        if (!tag.TryGet(key, out TagCompound dictValue)) {
+        if (data.Count == 0) {
             return;
         }
-        foreach (var (k, v) in dictValue) {
-            if (dictionary.TryGetValue(k, out var val)) {
-                fromTag(val, (TagCompound)v);
-            }
+        tag[key] = data;
+    }
+    public static void SaveDictionaryData<T>(this TagCompound tag, string key, Dictionary<string, T> dictionary, Func<T, object> valueSelector) {
+        TagCompound data = [];
+        foreach (var (k, v) in dictionary) {
+            data[k] = valueSelector(v);
         }
-    }
-    public static void SaveReadOnlyDictionaryData<T>(this TagCompound tag, string key, IReadOnlyDictionary<string, T> dictionary, Action<T, TagCompound> toTag) {
-        tag.SaveReadOnlyDictionaryData(key, dictionary, t => new TagCompound().WithAction(tag => toTag(t, tag)));
-    }
-    public static void SaveReadOnlyDictionaryData<T>(this TagCompound tag, string key, IReadOnlyDictionary<string, T> dictionary, Func<T, TagCompound?> toTag) {
-        TagCompound data = [.. dictionary.SelectWhere(
-            p => toTag(p.Value).Transfer(
-                t => t?.Count > 0 ?
-                NewHolder(NewPair(p.Key, (object)t)) :
-                null)
-        )];
-        if (data.Count > 0) {
-            tag[key] = data;
-        }
-    }
-    public static void LoadReadOnlyDictionaryData<T>(this TagCompound tag, string key, IReadOnlyDictionary<string, T> dictionary, Action<T, TagCompound> fromTag) {
-        if (!tag.TryGet(key, out TagCompound dictValue)) {
+        if (data.Count == 0) {
             return;
         }
-        foreach (var (k, v) in dictValue) {
-            if (dictionary.TryGetValue(k, out var val)) {
-                fromTag(val, (TagCompound)v);
-            }
+        tag[key] = data;
+    }
+    public static void SaveDictionaryData<T>(this TagCompound tag, string key, Dictionary<string, T> dictionary, Func<string, T, object> pairSelector) {
+        TagCompound data = [];
+        foreach (var (k, v) in dictionary) {
+            data[k] = pairSelector(k, v);
         }
-    }
-    public static void SaveListData<T>(this TagCompound tag, string key, IList<T> list, Action<T, TagCompound> toTag) {
-        tag.SaveListData(key, list, e => new TagCompound().WithAction(t => toTag(e, t)));
-    }
-    public static void SaveListData<T>(this TagCompound tag, string key, IList<T> list, Func<T, TagCompound?> toTag) {
-        bool needSave = false;
-        var data = list.Select(e => toTag(e).WithAction(t => needSave.AssignIf(t?.Count > 0, true))).ToList();
-        if (needSave) {
-            tag[key] = data;
-        }
-    }
-    public static void LoadListData<T>(this TagCompound tag, string key, IList<T> list, Action<T, TagCompound> fromTag) {
-        if (!tag.TryGet(key, out List<TagCompound?> listData)) {
+        if (data.Count == 0) {
             return;
         }
-        foreach (int i in Math.Min(list.Count, listData.Count)) {
-            var ld = listData[i];
-            if (ld != null) {
-                fromTag(list[i], ld);
-            }
+        tag[key] = data;
+    }
+    public static void SaveDictionaryData<TKey, TValue>(this TagCompound tag, string key, Dictionary<TKey, TValue> dictionary, Func<TKey, string> keySelector) where TKey : notnull {
+        TagCompound data = [];
+        foreach (var (k, v) in dictionary) {
+            data[keySelector(k)] = v;
+        }
+        if (data.Count == 0) {
+            return;
+        }
+        tag[key] = data;
+    }
+    public static void SaveDictionaryData<TKey, TValue>(this TagCompound tag, string key, Dictionary<TKey, TValue> dictionary, Func<TKey, string> keySelector, Func<TValue, object> valueSelector) where TKey : notnull {
+        TagCompound data = [];
+        foreach (var (k, v) in dictionary) {
+            data[keySelector(k)] = valueSelector(v);
+        }
+        if (data.Count == 0) {
+            return;
+        }
+        tag[key] = data;
+    }
+    public static void SaveDictionaryData<TKey, TValue>(this TagCompound tag, string key, Dictionary<TKey, TValue> dictionary, Func<TKey, string> keySelector, Func<TKey, TValue, object> pairSelector) where TKey : notnull {
+        TagCompound data = [];
+        foreach (var (k, v) in dictionary) {
+            data[keySelector(k)] = pairSelector(k, v);
+        }
+        if (data.Count == 0) {
+            return;
+        }
+        tag[key] = data;
+    }
+    public static void SaveDictionaryData<TKey, TValue>(this TagCompound tag, string key, Dictionary<TKey, TValue> dictionary, Func<TKey, string> keySelector, Func<string, TValue, object> pairSelector) where TKey : notnull {
+        TagCompound data = [];
+        foreach (var (k, v) in dictionary) {
+            var ks = keySelector(k);
+            data[ks] = pairSelector(ks, v);
+        }
+        if (data.Count == 0) {
+            return;
+        }
+        tag[key] = data;
+    }
+    #endregion
+    #region LoadDictionaryData
+    #region 字典作返回值
+    public static Dictionary<string, T> LoadDictionaryData<T>(this TagCompound tag, string key) {
+        Dictionary<string, T> result = [];
+        LoadDictionaryData(tag, key, result);
+        return result;
+    }
+    public static Dictionary<string, T> LoadDictionaryData<T>(this TagCompound tag, string key, Func<object, T> valueSelector) {
+        Dictionary<string, T> result = [];
+        LoadDictionaryData(tag, key, result, valueSelector);
+        return result;
+    }
+    public static Dictionary<string, T> LoadDictionaryData<T>(this TagCompound tag, string key, Func<string, object, T> pairSelector) {
+        Dictionary<string, T> result = [];
+        LoadDictionaryData(tag, key, result, pairSelector);
+        return result;
+    }
+    public static Dictionary<TKey, TValue> LoadDictionaryData<TKey, TValue>(this TagCompound tag, string key, Func<string, TKey> keySelector) where TKey : notnull {
+        Dictionary<TKey, TValue> result = [];
+        LoadDictionaryData(tag, key, result, keySelector);
+        return result;
+    }
+    public static Dictionary<TKey, TValue> LoadDictionaryData<TKey, TValue>(this TagCompound tag, string key, Func<string, TKey> keySelector, Func<object, TValue> valueSelector) where TKey : notnull {
+        Dictionary<TKey, TValue> result = [];
+        LoadDictionaryData(tag, key, result, keySelector, valueSelector);
+        return result;
+    }
+    public static Dictionary<TKey, TValue> LoadDictionaryData<TKey, TValue>(this TagCompound tag, string key, Func<string, TKey> keySelector, Func<string, object, TValue> pairSelector) where TKey : notnull {
+        Dictionary<TKey, TValue> result = [];
+        LoadDictionaryData(tag, key, result, keySelector, pairSelector);
+        return result;
+    }
+    public static Dictionary<TKey, TValue> LoadDictionaryData<TKey, TValue>(this TagCompound tag, string key, Func<string, TKey> keySelector, Func<TKey, object, TValue> pairSelector) where TKey : notnull {
+        Dictionary<TKey, TValue> result = [];
+        LoadDictionaryData(tag, key, result, keySelector, pairSelector);
+        return result;
+    }
+    #endregion
+    #region 字典作参数
+    public static void LoadDictionaryData<T>(this TagCompound tag, string key, Dictionary<string, T> dictionary) {
+        if (!tag.TryGet(key, out TagCompound data)) {
+            return;
+        }
+        foreach (var k in data.dict.Keys) {
+            dictionary[k] = data.Get<T>(k);
         }
     }
+    public static void LoadDictionaryData<T>(this TagCompound tag, string key, Dictionary<string, T> dictionary, Func<object, T> valueSelector) {
+        if (!tag.TryGet(key, out TagCompound data)) {
+            return;
+        }
+        foreach (var (k, v) in data) {
+            dictionary[k] = valueSelector(v);
+        }
+    }
+    public static void LoadDictionaryData<T>(this TagCompound tag, string key, Dictionary<string, T> dictionary, Func<string, object, T> pairSelector) {
+        if (!tag.TryGet(key, out TagCompound data)) {
+            return;
+        }
+        foreach (var (k, v) in data) {
+            dictionary[k] = pairSelector(k, v);
+        }
+    }
+    public static void LoadDictionaryData<TKey, TValue>(this TagCompound tag, string key, Dictionary<TKey, TValue> dictionary, Func<string, TKey> keySelector) where TKey : notnull {
+        if (!tag.TryGet(key, out TagCompound data)) {
+            return;
+        }
+        foreach (var k in data.dict.Keys) {
+            dictionary[keySelector(k)] = data.Get<TValue>(k);
+        }
+    }
+    public static void LoadDictionaryData<TKey, TValue>(this TagCompound tag, string key, Dictionary<TKey, TValue> dictionary, Func<string, TKey> keySelector, Func<object, TValue> valueSelector) where TKey : notnull {
+        if (!tag.TryGet(key, out TagCompound data)) {
+            return;
+        }
+        foreach (var (k, v) in data) {
+            dictionary[keySelector(k)] = valueSelector(v);
+        }
+    }
+    public static void LoadDictionaryData<TKey, TValue>(this TagCompound tag, string key, Dictionary<TKey, TValue> dictionary, Func<string, TKey> keySelector, Func<string, object, TValue> pairSelector) where TKey : notnull {
+        if (!tag.TryGet(key, out TagCompound data)) {
+            return;
+        }
+        foreach (var (k, v) in data) {
+            dictionary[keySelector(k)] = pairSelector(k, v);
+        }
+    }
+    public static void LoadDictionaryData<TKey, TValue>(this TagCompound tag, string key, Dictionary<TKey, TValue> dictionary, Func<string, TKey> keySelector, Func<TKey, object, TValue> pairSelector) where TKey : notnull {
+        if (!tag.TryGet(key, out TagCompound data)) {
+            return;
+        }
+        foreach (var (k, v) in data) {
+            TKey ks = keySelector(k);
+            dictionary[ks] = pairSelector(ks, v);
+        }
+    }
+    #endregion
+    #endregion
     #endregion
     #region BinaryWriter/Reader 拓展
     /*
