@@ -3760,10 +3760,10 @@ public static partial class TigerExtensions {
         self.Elements[index].Parent = null;
     }
     public static void RemoveRange(this UIElement self, int index, int count) {
-        self.Elements.RemoveRange(index, count);
         for (int i = index; i < index + count; ++i) {
             self.Elements[i].Parent = null;
         }
+        self.Elements.RemoveRange(index, count);
     }
     public static void Insert(this UIElement self, int index, UIElement child) {
         child.Remove();

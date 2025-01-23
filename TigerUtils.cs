@@ -5544,6 +5544,7 @@ public static partial class TigerExtensions {
     }
     #endregion
     #region BitArray拓展
+    [Obsolete("使用 HasAllSet 和 HasAnySet")]
     public static bool CheckAll(this BitArray bitArray, bool value = true) {
         for (int i = 0; i < bitArray.Length; i++) {
             if (bitArray[i] != value) {

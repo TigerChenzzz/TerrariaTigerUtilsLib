@@ -8,6 +8,7 @@ using Terraria.DataStructures;
 using TMLConfigManager = Terraria.ModLoader.Config.ConfigManager;
 using TMLDelegate = System.Delegate;
 using TMLItem = Terraria.Item;
+using TMLItemTagHandler = Terraria.GameContent.UI.Chat.ItemTagHandler;
 using TMLLogging = Terraria.ModLoader.Logging;
 using TMLMain = Terraria.Main;
 using TMLMod = Terraria.ModLoader.Mod;
@@ -16,8 +17,10 @@ using TMLModLoader = Terraria.ModLoader.ModLoader;
 using TMLMonoModHooks = Terraria.ModLoader.MonoModHooks;
 using TMLPlayer = Terraria.Player;
 using TMLProjectileLoader = Terraria.ModLoader.ProjectileLoader;
+using TMLPropertyFieldWrapper = Terraria.ModLoader.Config.UI.PropertyFieldWrapper;
 using TMLSamplerState = Microsoft.Xna.Framework.Graphics.SamplerState;
 using TMLSpriteBatch = Microsoft.Xna.Framework.Graphics.SpriteBatch;
+using TMLTextSnippet = Terraria.UI.Chat.TextSnippet;
 using TMLUIModConfig = Terraria.ModLoader.Config.UI.UIModConfig;
 
 namespace TigerUtilsLib;
@@ -27,6 +30,10 @@ public static partial class TigerUtils {
         public static class ConfigManager {
             public static void Save(TMLModConfig config) => TMLConfigManager.Save(config);
             public static IDictionary<TMLMod, List<TMLModConfig>> Configs => TMLConfigManager.Configs;
+            public static string GetLocalizedTooltip(TMLPropertyFieldWrapper member) => TMLConfigManager.GetLocalizedTooltip(member);
+        }
+        public static class ItemTagHandler {
+            public static TMLTextSnippet NewItemSnippet(TMLItem item) => new TMLItemTagHandler.ItemSnippet(item);
         }
         public static class Logging {
             public static ILog TML => TMLLogging.tML;

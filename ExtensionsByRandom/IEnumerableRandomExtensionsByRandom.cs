@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace TigerUtilsLib.ExtensionsByRandom;
 
 public static class TigerIEnumerableRandomExtensionsByRandom {
-    private static Func<Random> DefaultRandomGetter { get; set; } = () => new();
+    private static Func<Random> DefaultRandomGetter { get; set; } = () => System.Random.Shared;
     /// <summary>
     /// <br/>需确保<paramref name="enumerable"/>不会变化长度
     /// <br/>若可能会变化, 请调用<see cref="RandomS{T}(IEnumerable{T}, Random)"/>
