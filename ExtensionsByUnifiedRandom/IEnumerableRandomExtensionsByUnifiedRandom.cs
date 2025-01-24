@@ -192,7 +192,7 @@ public static class TigerIEnumerableRandomExtensionsByUnifiedRandom {
     /// <inheritdoc cref="Random{T}(IList{T}, UnifiedRandom)"/>
     public static T? Random<T>(this IList<T> list) => Random(list, DefaultUnifiedRandomGetter());
     /// <inheritdoc cref="RandomF{T}(IList{T}, UnifiedRandom)"/>
-    public static T? RandomF<T>(this IList<T> list) => RandomF(list, DefaultUnifiedRandomGetter());
+    public static T RandomF<T>(this IList<T> list) => RandomF(list, DefaultUnifiedRandomGetter());
     /// <inheritdoc cref="Random{T}(IList{T}, Func{T, double}, UnifiedRandom, bool)"/>
     public static T? Random<T>(this IList<T> list, Func<T, double> weight, bool uncheckNegative = false) => Random(list, weight, DefaultUnifiedRandomGetter(), uncheckNegative);
     /// <inheritdoc cref="Random{T}(IList{T}, Func{T, float}, UnifiedRandom, bool)"/>
@@ -367,10 +367,10 @@ public static class TigerIEnumerableRandomExtensionsByUnifiedRandom {
     #endregion
     #endregion
     #region IList<(weight, value)>
-    public static T? Random<T>(this IList<(double, T)> list, bool uncheckNegative = true) => Random(list, DefaultUnifiedRandomGetter(), uncheckNegative);
-    public static T? Random<T>(this IList<(float, T)> list, bool uncheckNegative = true) => Random(list, DefaultUnifiedRandomGetter(), uncheckNegative);
-    public static T? Random<T>(this IList<(int, T)> list, bool uncheckNegative = true) => Random(list, DefaultUnifiedRandomGetter(), uncheckNegative);
-    public static T? Random<T>(this IList<(double, T)> list, UnifiedRandom rand, bool uncheckNegative = true) {
+    public static T? RandomW<T>(this IList<(double, T)> list, bool uncheckNegative = true) => RandomW(list, DefaultUnifiedRandomGetter(), uncheckNegative);
+    public static T? RandomW<T>(this IList<(float, T)> list, bool uncheckNegative = true) => RandomW(list, DefaultUnifiedRandomGetter(), uncheckNegative);
+    public static T? RandomW<T>(this IList<(int, T)> list, bool uncheckNegative = true) => RandomW(list, DefaultUnifiedRandomGetter(), uncheckNegative);
+    public static T? RandomW<T>(this IList<(double, T)> list, UnifiedRandom rand, bool uncheckNegative = true) {
         double totalWeight = 0;
         if (uncheckNegative) {
             foreach (var (w, _) in list) {
@@ -404,7 +404,7 @@ public static class TigerIEnumerableRandomExtensionsByUnifiedRandom {
             return default;
         }
     }
-    public static T? Random<T>(this IList<(float, T)> list, UnifiedRandom rand, bool uncheckNegative = true) {
+    public static T? RandomW<T>(this IList<(float, T)> list, UnifiedRandom rand, bool uncheckNegative = true) {
         float totalWeight = 0;
         if (uncheckNegative) {
             foreach (var (w, _) in list) {
@@ -438,7 +438,7 @@ public static class TigerIEnumerableRandomExtensionsByUnifiedRandom {
             return default;
         }
     }
-    public static T? Random<T>(this IList<(int, T)> list, UnifiedRandom rand, bool uncheckNegative = true) {
+    public static T? RandomW<T>(this IList<(int, T)> list, UnifiedRandom rand, bool uncheckNegative = true) {
         int totalWeight = 0;
         if (uncheckNegative) {
             foreach (var (w, _) in list) {

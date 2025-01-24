@@ -17,6 +17,7 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using RList = TigerUtilsLib.Reflections.SystemReflections.System.Collections.Generic.List;
 using SOpCode = System.Reflection.Emit.OpCode;
 using SOpCodes = System.Reflection.Emit.OpCodes;
@@ -4924,59 +4925,6 @@ public static partial class TigerExtensions {
     }
     #endregion
     #region 数组和列表相关
-    #region 打乱数组/列表
-    /// <summary>
-    /// 直接在此列表上打乱整个列表
-    /// </summary>
-    public static List<T> Shuffle<T>(this List<T> list, Random? rd = null) {
-        T tmp;
-        if (list.Count == 0) {
-            return list;
-        }
-        rd ??= new();
-        foreach (int i in Range(list.Count - 1, 0, RangeType.Negative)) {
-            int randint = rd.Next(0, i + 1);
-            tmp = list[randint];
-            list[randint] = list[i];
-            list[i] = tmp;
-        }
-        return list;
-    }
-    /// <summary>
-    /// 直接在此数组上打乱整个数组
-    /// </summary>
-    public static T[] Shuffle<T>(this T[] array, Random? rd = null) {
-        T tmp;
-        rd ??= new();
-        foreach (int i in Range(array.Length - 1, 0, RangeType.Negative)) {
-            int randint = rd.Next(0, i + 1);
-            tmp = array[randint];
-            array[randint] = array[i];
-            array[i] = tmp;
-        }
-        return array;
-    }
-    /// <summary>
-    /// 返回一个打乱了的列表, 原列表不变
-    /// </summary>
-    public static List<T> Shuffled<T>(this List<T> list) where T : ICloneable {
-        List<T> ret = [];
-        foreach (T t in list) {
-            ret.Add((T)t.Clone());
-        }
-        return ret.Shuffle();
-    }
-    /// <summary>
-    /// 返回一个打乱了的数组, 原数组不变
-    /// </summary>
-    public static T[] Shuffled<T>(this T[] array) where T : ICloneable {
-        T[] ret = new T[array.Length];
-        foreach (int i in Range(array.Length)) {
-            ret[i] = (T)array.Clone();
-        }
-        return ret.Shuffle();
-    }
-    #endregion
     #region IList的Index和Range拓展
     private static int GetIndex<T>(IList<T> list, Index index) {
         return index.IsFromEnd ? list.Count - index.Value : index.Value;
@@ -6294,17 +6242,7 @@ public static partial class TigerExtensions {
         var (offset, length) = range.GetOffsetAndLengthSafe(array.Length);
         return new(array, offset, length);
     }
-    public static Span<T> ToSpan<T>(this List<T>? list) {
-        if (list is null) {
-            return default;
-        }
-        var items = RList.GetItems(list);
-        var size = RList.GetSize(list);
-        Debug.Assert(items is not null);
-        Debug.Assert((uint)size <= (uint)items.Length);
-        Debug.Assert(items.GetType() == typeof(T[]));
-        return new(items, 0, size);
-    }
+    public static Span<T> ToSpan<T>(this List<T>? list) => CollectionsMarshal.AsSpan(list);
     public static Span<T> ToSpan<T>(this List<T> list, Range range) {
         if (list is null) {
             return default;
