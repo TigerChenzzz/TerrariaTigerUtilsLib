@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace TigerUtilsLib.ExtensionsByRandom;
 
 public static class TigerIEnumerableRandomExtensionsByRandom {
     private static Func<Random> DefaultRandomGetter { get; set; } = () => System.Random.Shared;
+    #region IEnumerable
     /// <summary>
     /// <br/>需确保<paramref name="enumerable"/>不会变化长度
     /// <br/>若可能会变化, 请调用<see cref="RandomS{T}(IEnumerable{T}, Random)"/>
@@ -118,6 +118,8 @@ public static class TigerIEnumerableRandomExtensionsByRandom {
         int randInt = rand.Next(totalWeight);
         return list.FirstOrDefault(p => p.weight > randInt || Do(randInt -= p.weight)).value;
     }
+    #endregion
+    #region IList
     public static T? Random<T>(this IList<T> list, Random? rand = null) {
         int count = list.Count;
         if (count <= 0) {
@@ -229,4 +231,5 @@ public static class TigerIEnumerableRandomExtensionsByRandom {
         }
         return list.ElementAt(index);
     }
+    #endregion
 }

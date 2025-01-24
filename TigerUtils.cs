@@ -6328,9 +6328,8 @@ public static partial class TigerExtensions {
     #endregion
     #endregion
     #region 字典拓展
-    public static void Add<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, KeyValuePair<TKey, TValue> pair) where TKey : notnull {
-        dictionary.Add(pair.Key, pair.Value);
-    }
+    public static void Add<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, (TKey Key, TValue Value) pair) where TKey : notnull => dictionary.Add(pair.Key, pair.Value);
+    public static void Add<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, KeyValuePair<TKey, TValue> pair) where TKey : notnull => dictionary.Add(pair.Key, pair.Value);
     public static void AddCount<T>(this Dictionary<T, int> dictionary, T item, int count = 1) where T : notnull {
         if (!dictionary.TryAdd(item, count)) {
             dictionary[item] += count;
