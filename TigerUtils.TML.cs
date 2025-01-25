@@ -233,7 +233,7 @@ public static partial class TigerUtils {
             return x > 1 - rand.NextDouble();
         }
         #region 随机多个总和固定的非负数 RandomNonnegetivesWithFixedSum
-        public static void RandomNonnegetivesWithFixedSum(int[] result, int sum, UnifiedRandom? rand = null) {
+        public static void RandomNonnegetivesWithFixedSumI(Span<int> result, int sum, UnifiedRandom? rand = null) {
             int count = result.Length;
             if (count <= 0)
                 return;
@@ -256,7 +256,7 @@ public static partial class TigerUtils {
             for (int i = count - 1; i >= 1; --i)
                 result[i] -= result[i - 1];
         }
-        public static void RandomNonnegetivesWithFixedSum(int[] result, float[] weights, int sum, UnifiedRandom? rand = null) {
+        public static void RandomNonnegetivesWithFixedSumI(Span<int> result, Span<float> weights, int sum, UnifiedRandom? rand = null) {
             int count = Math.Min(result.Length, weights.Length);
             if (count <= 0)
                 return;
@@ -266,7 +266,7 @@ public static partial class TigerUtils {
                 return;
             }
             rand ??= DefaultUnifiedRandomGetter();
-            float[] rs = new float[count];
+            Span<float> rs = stackalloc float[count];
             rs[0] = rand.NextFloat(weights[0]);
             for (int i = 1; i < count; ++i)
                 rs[i] = rs[i - 1] + rand.NextFloat(weights[i]);
@@ -280,7 +280,7 @@ public static partial class TigerUtils {
             for (int i = count - 1; i >= 1; --i)
                 result[i] -= result[i - 1];
         }
-        public static void RandomNonnegetivesWithFixedSum(int[] result, Func<int, float> weightByIndex, int sum, UnifiedRandom? rand = null) {
+        public static void RandomNonnegetivesWithFixedSumI(Span<int> result, Func<int, float> weightByIndex, int sum, UnifiedRandom? rand = null) {
             int count = result.Length;
             if (count <= 0)
                 return;
@@ -290,7 +290,7 @@ public static partial class TigerUtils {
                 return;
             }
             rand ??= DefaultUnifiedRandomGetter();
-            float[] rs = new float[count];
+            Span<float> rs = stackalloc float[count];
             rs[0] = rand.NextFloat(weightByIndex(0));
             for (int i = 1; i < count; ++i)
                 rs[i] = rs[i - 1] + rand.NextFloat(weightByIndex(i));
@@ -304,7 +304,7 @@ public static partial class TigerUtils {
             for (int i = count - 1; i >= 1; --i)
                 result[i] -= result[i - 1];
         }
-        public static void RandomNonnegetivesWithFixedSum(int[] result, double[] weights, int sum, UnifiedRandom? rand = null) {
+        public static void RandomNonnegetivesWithFixedSumI(Span<int> result, Span<double> weights, int sum, UnifiedRandom? rand = null) {
             int count = Math.Min(result.Length, weights.Length);
             if (count <= 0)
                 return;
@@ -314,7 +314,7 @@ public static partial class TigerUtils {
                 return;
             }
             rand ??= DefaultUnifiedRandomGetter();
-            double[] rs = new double[count];
+            Span<double> rs = stackalloc double[count];
             rs[0] = rand.NextDouble(weights[0]);
             for (int i = 1; i < count; ++i)
                 rs[i] = rs[i - 1] + rand.NextDouble(weights[i]);
@@ -328,7 +328,7 @@ public static partial class TigerUtils {
             for (int i = count - 1; i >= 1; --i)
                 result[i] -= result[i - 1];
         }
-        public static void RandomNonnegetivesWithFixedSum(int[] result, Func<int, double> weightByIndex, int sum, UnifiedRandom? rand = null) {
+        public static void RandomNonnegetivesWithFixedSumI(Span<int> result, Func<int, double> weightByIndex, int sum, UnifiedRandom? rand = null) {
             int count = result.Length;
             if (count <= 0)
                 return;
@@ -338,7 +338,7 @@ public static partial class TigerUtils {
                 return;
             }
             rand ??= DefaultUnifiedRandomGetter();
-            double[] rs = new double[count];
+            Span<double> rs = stackalloc double[count];
             rs[0] = rand.NextDouble(weightByIndex(0));
             for (int i = 1; i < count; ++i)
                 rs[i] = rs[i - 1] + rand.NextDouble(weightByIndex(i));
@@ -352,7 +352,7 @@ public static partial class TigerUtils {
             for (int i = count - 1; i >= 1; --i)
                 result[i] -= result[i - 1];
         }
-        public static void RandomNonnegetivesWithFixedSum(float[] result, float sum = 1f, UnifiedRandom? rand = null) {
+        public static void RandomNonnegetivesWithFixedSumI(Span<float> result, float sum = 1f, UnifiedRandom? rand = null) {
             int count = result.Length;
             if (count <= 0)
                 return;
@@ -372,7 +372,7 @@ public static partial class TigerUtils {
                 result[i] *= m;
             }
         }
-        public static void RandomNonnegetivesWithFixedSum(float[] result, float[] weights, float sum = 1f, UnifiedRandom? rand = null) {
+        public static void RandomNonnegetivesWithFixedSumI(Span<float> result, Span<float> weights, float sum = 1f, UnifiedRandom? rand = null) {
             int count = Math.Min(result.Length, weights.Length);
             if (count <= 0)
                 return;
@@ -392,7 +392,7 @@ public static partial class TigerUtils {
                 result[i] *= m;
             }
         }
-        public static void RandomNonnegetivesWithFixedSum(float[] result, Func<int, float> weightByIndex, float sum = 1f, UnifiedRandom? rand = null) {
+        public static void RandomNonnegetivesWithFixedSumI(Span<float> result, Func<int, float> weightByIndex, float sum = 1f, UnifiedRandom? rand = null) {
             int count = result.Length;
             if (count <= 0)
                 return;
@@ -412,7 +412,7 @@ public static partial class TigerUtils {
                 result[i] *= m;
             }
         }
-        public static void RandomNonnegetivesWithFixedSum(double[] result, double sum = 1.0, UnifiedRandom? rand = null) {
+        public static void RandomNonnegetivesWithFixedSumI(Span<double> result, double sum = 1.0, UnifiedRandom? rand = null) {
             int count = result.Length;
             if (count <= 0)
                 return;
@@ -432,7 +432,7 @@ public static partial class TigerUtils {
                 result[i] *= m;
             }
         }
-        public static void RandomNonnegetivesWithFixedSum(double[] result, double[] weights, double sum = 1.0, UnifiedRandom? rand = null) {
+        public static void RandomNonnegetivesWithFixedSumI(Span<double> result, Span<double> weights, double sum = 1.0, UnifiedRandom? rand = null) {
             int count = Math.Min(result.Length, weights.Length);
             if (count <= 0)
                 return;
@@ -452,7 +452,7 @@ public static partial class TigerUtils {
                 result[i] *= m;
             }
         }
-        public static void RandomNonnegetivesWithFixedSum(double[] result, Func<int, double> weightByIndex, double sum = 1.0, UnifiedRandom? rand = null) {
+        public static void RandomNonnegetivesWithFixedSumI(Span<double> result, Func<int, double> weightByIndex, double sum = 1.0, UnifiedRandom? rand = null) {
             int count = result.Length;
             if (count <= 0)
                 return;
@@ -474,57 +474,57 @@ public static partial class TigerUtils {
         }
         public static int[] RandomNonnegetivesWithFixedSum(int count, int sum, UnifiedRandom? rand = null) {
             int[] result = new int[count];
-            RandomNonnegetivesWithFixedSum(result, sum, rand);
+            RandomNonnegetivesWithFixedSumI(result, sum, rand);
             return result;
         }
-        public static int[] RandomNonnegetivesWithFixedSum(int count, float[] weights, int sum, UnifiedRandom? rand = null) {
-            int[] result = new int[count];
-            RandomNonnegetivesWithFixedSum(result, weights, sum, rand);
+        public static int[] RandomNonnegetivesWithFixedSum(Span<float> weights, int sum, UnifiedRandom? rand = null) {
+            int[] result = new int[weights.Length];
+            RandomNonnegetivesWithFixedSumI(result, weights, sum, rand);
             return result;
         }
         public static int[] RandomNonnegetivesWithFixedSum(int count, Func<int, float> weightByIndex, int sum, UnifiedRandom? rand = null) {
             int[] result = new int[count];
-            RandomNonnegetivesWithFixedSum(result, weightByIndex, sum, rand);
+            RandomNonnegetivesWithFixedSumI(result, weightByIndex, sum, rand);
             return result;
         }
-        public static int[] RandomNonnegetivesWithFixedSum(int count, double[] weights, int sum, UnifiedRandom? rand = null) {
-            int[] result = new int[count];
-            RandomNonnegetivesWithFixedSum(result, weights, sum, rand);
+        public static int[] RandomNonnegetivesWithFixedSum(Span<double> weights, int sum, UnifiedRandom? rand = null) {
+            int[] result = new int[weights.Length];
+            RandomNonnegetivesWithFixedSumI(result, weights, sum, rand);
             return result;
         }
         public static int[] RandomNonnegetivesWithFixedSum(int count, Func<int, double> weightByIndex, int sum, UnifiedRandom? rand = null) {
             int[] result = new int[count];
-            RandomNonnegetivesWithFixedSum(result, weightByIndex, sum, rand);
+            RandomNonnegetivesWithFixedSumI(result, weightByIndex, sum, rand);
             return result;
         }
         public static float[] RandomNonnegetivesWithFixedSum(int count, float sum, UnifiedRandom? rand = null) {
             float[] result = new float[count];
-            RandomNonnegetivesWithFixedSum(result, sum, rand);
+            RandomNonnegetivesWithFixedSumI(result, sum, rand);
             return result;
         }
-        public static float[] RandomNonnegetivesWithFixedSum(int count, float[] weights, float sum, UnifiedRandom? rand = null) {
-            float[] result = new float[count];
-            RandomNonnegetivesWithFixedSum(result, weights, sum, rand);
+        public static float[] RandomNonnegetivesWithFixedSum(Span<float> weights, float sum, UnifiedRandom? rand = null) {
+            float[] result = new float[weights.Length];
+            RandomNonnegetivesWithFixedSumI(result, weights, sum, rand);
             return result;
         }
         public static float[] RandomNonnegetivesWithFixedSum(int count, Func<int, float> weightByIndex, float sum, UnifiedRandom? rand = null) {
             float[] result = new float[count];
-            RandomNonnegetivesWithFixedSum(result, weightByIndex, sum, rand);
+            RandomNonnegetivesWithFixedSumI(result, weightByIndex, sum, rand);
             return result;
         }
         public static double[] RandomNonnegetivesWithFixedSum(int count, double sum = 1.0, UnifiedRandom? rand = null) {
             double[] result = new double[count];
-            RandomNonnegetivesWithFixedSum(result, sum, rand);
+            RandomNonnegetivesWithFixedSumI(result, sum, rand);
             return result;
         }
-        public static double[] RandomNonnegetivesWithFixedSum(int count, double[] weights, double sum = 1.0, UnifiedRandom? rand = null) {
-            double[] result = new double[count];
-            RandomNonnegetivesWithFixedSum(result, weights, sum, rand);
+        public static double[] RandomNonnegetivesWithFixedSum(Span<double> weights, double sum = 1.0, UnifiedRandom? rand = null) {
+            double[] result = new double[weights.Length];
+            RandomNonnegetivesWithFixedSumI(result, weights, sum, rand);
             return result;
         }
         public static double[] RandomNonnegetivesWithFixedSum(int count, Func<int, double> weightByIndex, double sum = 1.0, UnifiedRandom? rand = null) {
             double[] result = new double[count];
-            RandomNonnegetivesWithFixedSum(result, weightByIndex, sum, rand);
+            RandomNonnegetivesWithFixedSumI(result, weightByIndex, sum, rand);
             return result;
         }
         #endregion
@@ -617,7 +617,7 @@ public static partial class TigerUtils {
     }
     #endregion
     #region ChatManager 优化
-    public static class ChatManagerFix {
+    public static partial class ChatManagerFix {
         #region 原版代码参照
         public static Vector2 GetStringSize_Vanilla(DynamicSpriteFont font, TextSnippet[] snippets, Vector2 baseScale, float maxWidth = -1f) {
             // Vector2 mousePosition = Main.MouseScreen; // vec
@@ -684,7 +684,7 @@ public static partial class TigerUtils {
 
             return result;
         }
-        [SuppressMessage("Performance", "SYSLIB1045:转换为“GeneratedRegexAttribute”。")]
+        // [SuppressMessage("Performance", "SYSLIB1045:转换为“GeneratedRegexAttribute”。")]
         public static Vector2 DrawColorCodedString_Vanilla(SpriteBatch spriteBatch, DynamicSpriteFont font, TextSnippet[] snippets, Vector2 position, Color baseColor, float rotation, Vector2 origin, Vector2 baseScale, out int hoveredSnippet, float maxWidth, bool ignoreColors = false) {
             hoveredSnippet = -1; // num
             Vector2 mousePosition = Main.MouseScreen; // vec
@@ -718,7 +718,7 @@ public static partial class TigerUtils {
                     continue;
                 }
 
-                string[] lines = Regex.Split(textSnippet.Text, "(\n)"); // array
+                string[] lines = LineSplitRegex().Split(textSnippet.Text); // array
                 bool flag = true;
                 foreach (string text in lines) {
                     string[] words = text.Split(' '); // array2
@@ -1396,6 +1396,9 @@ public static partial class TigerUtils {
             result.Y.ClampMinTo(positionNow.Y + maxLineHeight);
             result -= position;
         }
+
+        [GeneratedRegex("(\n)")]
+        private static partial Regex LineSplitRegex();
         #endregion
     }
     #endregion

@@ -6417,19 +6417,34 @@ public static partial class TigerExtensions {
         }
     }
     public static TValue GetOrAdd<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue valueToAdd) where TKey : notnull {
-        if (dictionary.TryGetValue(key, out var value)) {
-            return value;
+        ref TValue? value = ref CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out bool exists);
+        if (exists) {
+            return NotNull(value);
         }
-        dictionary.Add(key, valueToAdd);
-        return valueToAdd;
+        return value = valueToAdd;
     }
     public static TValue GetOrAdd<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<TValue> getValueToAdd) where TKey : notnull {
-        if (dictionary.TryGetValue(key, out var value)) {
-            return value;
+        ref TValue? value = ref CollectionsMarshal.GetValueRefOrAddDefault(dictionary, key, out bool exists);
+        if (exists) {
+            return NotNull(value);
         }
-        var  valueToAdd = getValueToAdd();
-        dictionary.Add(key, valueToAdd);
-        return valueToAdd;
+        return value = getValueToAdd();
+    }
+    public static bool TryUpdate<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue value) where TKey : notnull {
+        ref var val = ref CollectionsMarshal.GetValueRefOrNullRef(dictionary, key);
+        if (Unsafe.IsNullRef(ref val)) {
+            return false;
+        }
+        val = value;
+        return true;
+    }
+    public static bool TryUpdate<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, Func<TValue> getValue) where TKey : notnull {
+        ref var val = ref CollectionsMarshal.GetValueRefOrNullRef(dictionary, key);
+        if (Unsafe.IsNullRef(ref val)) {
+            return false;
+        }
+        val = getValue();
+        return true;
     }
     #region 字典的序号相关
     private static class DictionaryIndexMethodExtendHelper<TKey, TValue> where TKey : notnull {
@@ -6891,6 +6906,159 @@ public static partial class TigerExtensions {
         v8 = list[8];
     }
     public static void Deconstruct<T>(this IList<T> list, out T v0, out T v1, out T v2, out T v3, out T v4, out T v5, out T v6, out T v7, out T v8, out T v9) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+        v5 = list[5];
+        v6 = list[6];
+        v7 = list[7];
+        v8 = list[8];
+        v9 = list[9];
+    }
+    #endregion
+    #region Span 解构
+    public static void Deconstruct<T>(this Span<T> list, out T v0) {
+        v0 = list[0];
+    }
+    public static void Deconstruct<T>(this Span<T> list, out T v0, out T v1) {
+        v0 = list[0];
+        v1 = list[1];
+    }
+    public static void Deconstruct<T>(this Span<T> list, out T v0, out T v1, out T v2) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+    }
+    public static void Deconstruct<T>(this Span<T> list, out T v0, out T v1, out T v2, out T v3) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+    }
+    public static void Deconstruct<T>(this Span<T> list, out T v0, out T v1, out T v2, out T v3, out T v4) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+    }
+    public static void Deconstruct<T>(this Span<T> list, out T v0, out T v1, out T v2, out T v3, out T v4, out T v5) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+        v5 = list[5];
+    }
+    public static void Deconstruct<T>(this Span<T> list, out T v0, out T v1, out T v2, out T v3, out T v4, out T v5, out T v6) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+        v5 = list[5];
+        v6 = list[6];
+    }
+    public static void Deconstruct<T>(this Span<T> list, out T v0, out T v1, out T v2, out T v3, out T v4, out T v5, out T v6, out T v7) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+        v5 = list[5];
+        v6 = list[6];
+        v7 = list[7];
+    }
+    public static void Deconstruct<T>(this Span<T> list, out T v0, out T v1, out T v2, out T v3, out T v4, out T v5, out T v6, out T v7, out T v8) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+        v5 = list[5];
+        v6 = list[6];
+        v7 = list[7];
+        v8 = list[8];
+    }
+    public static void Deconstruct<T>(this Span<T> list, out T v0, out T v1, out T v2, out T v3, out T v4, out T v5, out T v6, out T v7, out T v8, out T v9) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+        v5 = list[5];
+        v6 = list[6];
+        v7 = list[7];
+        v8 = list[8];
+        v9 = list[9];
+    }
+    
+    public static void Deconstruct<T>(this ReadOnlySpan<T> list, out T v0) {
+        v0 = list[0];
+    }
+    public static void Deconstruct<T>(this ReadOnlySpan<T> list, out T v0, out T v1) {
+        v0 = list[0];
+        v1 = list[1];
+    }
+    public static void Deconstruct<T>(this ReadOnlySpan<T> list, out T v0, out T v1, out T v2) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+    }
+    public static void Deconstruct<T>(this ReadOnlySpan<T> list, out T v0, out T v1, out T v2, out T v3) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+    }
+    public static void Deconstruct<T>(this ReadOnlySpan<T> list, out T v0, out T v1, out T v2, out T v3, out T v4) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+    }
+    public static void Deconstruct<T>(this ReadOnlySpan<T> list, out T v0, out T v1, out T v2, out T v3, out T v4, out T v5) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+        v5 = list[5];
+    }
+    public static void Deconstruct<T>(this ReadOnlySpan<T> list, out T v0, out T v1, out T v2, out T v3, out T v4, out T v5, out T v6) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+        v5 = list[5];
+        v6 = list[6];
+    }
+    public static void Deconstruct<T>(this ReadOnlySpan<T> list, out T v0, out T v1, out T v2, out T v3, out T v4, out T v5, out T v6, out T v7) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+        v5 = list[5];
+        v6 = list[6];
+        v7 = list[7];
+    }
+    public static void Deconstruct<T>(this ReadOnlySpan<T> list, out T v0, out T v1, out T v2, out T v3, out T v4, out T v5, out T v6, out T v7, out T v8) {
+        v0 = list[0];
+        v1 = list[1];
+        v2 = list[2];
+        v3 = list[3];
+        v4 = list[4];
+        v5 = list[5];
+        v6 = list[6];
+        v7 = list[7];
+        v8 = list[8];
+    }
+    public static void Deconstruct<T>(this ReadOnlySpan<T> list, out T v0, out T v1, out T v2, out T v3, out T v4, out T v5, out T v6, out T v7, out T v8, out T v9) {
         v0 = list[0];
         v1 = list[1];
         v2 = list[2];
