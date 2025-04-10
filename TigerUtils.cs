@@ -4021,6 +4021,344 @@ public static partial class TigerClasses {
         #endregion
     }
     #endregion
+    #region NullRemoveEnumerable & CustomRemoveEnumerable
+    public readonly struct NullRemoveEnumerable<T>(IList<T?> list) : IEnumerable<T> {
+        public IEnumerator<T> GetEnumerator() => new Enumerator(list);
+        IEnumerator IEnumerable.GetEnumerator() => new Enumerator(list);
+        public struct Enumerator(IList<T?> list) : IEnumerator<T>, IEnumerator {
+            private int _index = -1;
+            private int _offset;
+
+            public readonly T Current => NotNull(list[_index]);
+            readonly object? IEnumerator.Current => Current;
+            public void Dispose() {
+                if (_offset != 0) {
+                    list.RemoveRange(_index - _offset, _offset);
+                }
+                _index = -1;
+                _offset = 0;
+            }
+            public bool MoveNext() {
+                if (_offset != 0) {
+                    list[_index - _offset] = list[_index];
+                }
+                while (true) {
+                    _index += 1;
+                    if (_index >= list.Count) {
+                        Dispose();
+                        return false;
+                    }
+                    if (list[_index] != null) {
+                        return true;
+                    }
+                    _offset += 1;
+                }
+            }
+            public void Reset() {
+                if (_offset != 0) {
+                    list.RemoveRange(_index - _offset, _offset);
+                }
+                _index = -1;
+                _offset = 0;
+            }
+
+#if false
+            private IEnumerable<T> GetEnumerable() {
+                int offset = 0;
+                for (int i = 0; i < _list.Count; ++i) {
+                    var item = _list[i];
+                    if (item == null) {
+                        offset += 1;
+                        continue;
+                    }
+                    yield return item;
+                    if (offset != 0) {
+                        _list[i - offset] = item;
+                    }
+                }
+                _list.RemoveRange(_list.Count - offset, offset);
+            }
+#endif
+        }
+    }
+    public readonly struct CustomRemoveEnumerable<T>(IList<T> list, Func<T, bool> removePredicate) : IEnumerable<T> {
+        public IEnumerator<T> GetEnumerator() => new Enumerator(list, removePredicate);
+        IEnumerator IEnumerable.GetEnumerator() => new Enumerator(list, removePredicate);
+        public struct Enumerator(IList<T> list, Func<T, bool> removePredicate) : IEnumerator<T>, IEnumerator {
+            private int _index = -1;
+            private int _offset;
+
+            public readonly T Current => NotNull(list[_index]);
+            readonly object? IEnumerator.Current => Current;
+            public void Dispose() {
+                if (_offset != 0) {
+                    list.RemoveRange(_index - _offset, _offset);
+                }
+                _index = -1;
+                _offset = 0;
+            }
+            public bool MoveNext() {
+                if (_offset != 0) {
+                    list[_index - _offset] = list[_index];
+                }
+                while (true) {
+                    _index += 1;
+                    if (_index >= list.Count) {
+                        Dispose();
+                        return false;
+                    }
+                    if (!removePredicate(list[_index])) {
+                        return true;
+                    }
+                    _offset += 1;
+                }
+            }
+            public void Reset() {
+                if (_offset != 0) {
+                    list.RemoveRange(_index - _offset, _offset);
+                }
+                _index = -1;
+                _offset = 0;
+            }
+        }
+    }
+    #endregion
+    #region ListQueue
+    public class ListQueue<T>(int capacity = 4) : IList<T>, IReadOnlyList<T>, IEnumerable<T> {
+        private T[] _items = new T[capacity];
+        private int _top;
+        private int _length;
+        private int RealIndex(int index) => (index + _top) % _items.Length;
+
+        public T this[int index] {
+            get {
+                if (index < 0 || index >= _length)
+                    throw new IndexOutOfRangeException();
+                return _items[RealIndex(index)];
+            }
+            set {
+                if (index < 0 || index >= _length)
+                    throw new IndexOutOfRangeException();
+                _items[RealIndex(index)] = value;
+            }
+        }
+        public int Count => _length;
+        public bool IsReadOnly => false;
+        public void Add(T item) {
+            if (_length < _items.Length) {
+                _items[RealIndex(_length++)] = item;
+                return;
+            }
+            T[] newItems = new T[_length * 2];
+            Array.Copy(_items, _top, newItems, 0, _length - _top);
+            Array.Copy(_items, 0, newItems, _length - _top, _top);
+            _items = newItems;
+            _top = 0;
+            _items[RealIndex(_length++)] = item;
+        }
+        public void Clear() {
+            _items = new T[4];
+            _length = _top = 0;
+        }
+        public bool Contains(T item) {
+            for (int i = 0; i < _length; ++i) {
+                if (Equals(this[i], item)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        public void CopyTo(T[] array, int arrayIndex) {
+            var len = _items.Length;
+            if (_top + _length <= len) {
+                Array.Copy(_items, _top, array, arrayIndex, _length);
+                return;
+            }
+            Array.Copy(_items, _top, array, arrayIndex, len - _top);
+            Array.Copy(_items, 0, array, arrayIndex + len - _top, _length + _top - len);
+        }
+        public int IndexOf(T item) {
+            for (int i = 0; i < _length; ++i) {
+                if (Equals(this[i], item)) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        public void Insert(int index, T item) {
+            if (index < 0 || index > _length) {
+                throw new IndexOutOfRangeException();
+            }
+            if (index == _length) {
+                Add(item);
+                return;
+            }
+            var len = _items.Length;
+            if (_length < len) {
+                _length += 1;
+                var topAddLength = _top + _length;
+                var topAddIndex = _top + index;
+                if (topAddLength <= len) {
+                    for (int i = topAddIndex; i < topAddLength; ++i) {
+                        (_items[i], item) = (item, _items[i]);
+                    }
+                    return;
+                }
+                topAddLength -= len;
+                if (topAddIndex >= len) {
+                    for (int i = topAddIndex - len; i < topAddLength; ++i) {
+                        (_items[i], item) = (item, _items[i]);
+                    }
+                    return;
+                }
+                for (int i = topAddIndex; i < len; ++i) {
+                    (_items[i], item) = (item, _items[i]);
+                }
+                for (int i = 0; i < topAddLength; ++i) {
+                    (_items[i], item) = (item, _items[i]);
+                }
+            }
+            else {
+                T[] newItems = new T[len * 2];
+                var topAddLength = _top + _length;
+                var topAddIndex = _top + index;
+                if (topAddLength <= len) {
+                    Array.Copy(_items, _top, newItems, 0, index);
+                    newItems[index] = item;
+                    Array.Copy(_items, _top + index, newItems, index + 1, _length - index);
+                    _length += 1;
+                    return;
+                }
+                if (topAddIndex >= len) {
+                    topAddIndex -= len;
+                    Array.Copy(_items, _top, newItems, 0, len - _top);
+                    Array.Copy(_items, 0, newItems, len - _top, topAddIndex);
+                    newItems[index] = item;
+                    Array.Copy(_items, topAddIndex, newItems, index + 1, _length - index);
+                    _length += 1;
+                    return;
+                }
+                Array.Copy(_items, _top, newItems, 0, index);
+                newItems[index] = item;
+                Array.Copy(_items, topAddIndex, newItems, index + 1, len - topAddIndex);
+                Array.Copy(_items, 0, newItems, len - _top + 1, topAddLength - len);
+                _length += 1;
+            }
+        }
+        public bool Remove(T item) {
+            for (int i = 0; i < _length; ++i) {
+                if (object.Equals(this[i], item)) {
+                    RemoveAt(i);
+                    return true;
+                }
+            }
+            return false;
+        }
+        public void RemoveAt(int index) {
+            if (index < 0 || index >= _length)
+                throw new IndexOutOfRangeException();
+            var len = _items.Length;
+            if (len <= 4 || _length >= len / 4) {
+                var topAddLength = _top + _length--;
+                var topAddIndex = _top + index;
+                T temp = default!;
+                if (topAddLength <= len) {
+                    for (int i = topAddLength - 1; i >= topAddIndex; --i) {
+                        (_items[i], temp) = (temp, _items[i]);
+                    }
+                    return;
+                }
+                topAddLength -= len;
+                if (topAddIndex >= len) {
+                    topAddIndex -= len;
+                    for (int i = topAddLength - 1; i >= topAddIndex; --i) {
+                        (_items[i], temp) = (temp, _items[i]);
+                    }
+                    return;
+                }
+                for (int i = topAddLength - 1; i >= 0; --i) {
+                    (_items[i], temp) = (temp, _items[i]);
+                }
+                for (int i = len - 1; i >= topAddIndex; --i) {
+                    (_items[i], temp) = (temp, _items[i]);
+                }
+            }
+            else {
+                T[] newItems = new T[len / 2];
+                var topAddLength = _top + _length--;
+                var topAddIndex = _top + index;
+                if (topAddLength <= len) {
+                    Array.Copy(_items, _top, newItems, 0, index);
+                    Array.Copy(_items, _top + index + 1, newItems, index, _length - index);
+                    return;
+                }
+                if (topAddIndex >= len) {
+                    topAddIndex -= len;
+                    Array.Copy(_items, _top, newItems, 0, len - _top);
+                    Array.Copy(_items, 0, newItems, len - _top, topAddIndex);
+                    Array.Copy(_items, topAddIndex + 1, newItems, index, _length - index);
+                    return;
+                }
+                Array.Copy(_items, _top, newItems, 0, index);
+                Array.Copy(_items, topAddIndex + 1, newItems, index, len - topAddIndex - 1);
+                Array.Copy(_items, 0, newItems, len - _top - 1, topAddLength - len);
+            }
+        }
+        #region Queue
+        public T Dequeue() {
+            if (_length == 0) {
+                throw new InvalidOperationException("ListQueue empty.");
+            }
+            var result = _items[_top++];
+            if (_top >= _items.Length)
+                _top = 0;
+            _length -= 1;
+            return result;
+        }
+        public void Enqueue(T item) => Add(item);
+        public T Peek() {
+            if (_length == 0) {
+                throw new InvalidOperationException("ListQueue empty.");
+            }
+            return _items[_top];
+        }
+
+        public bool TryDequeue([NotNullWhen(true)] out T? result) {
+            if (_length == 0) {
+                result = default;
+                return false;
+            }
+            result = _items[_top++]!;
+            if (_top >= _items.Length)
+                _top = 0;
+            _length -= 1;
+            return true;
+        }
+        public bool TryPeek([NotNullWhen(true)] out T? result) {
+            if (_length == 0) {
+                result = default;
+                return false;
+            }
+            result = _items[_top]!;
+            return true;
+        }
+        #endregion
+        #region Enumerable
+        public IEnumerator<T> GetEnumerator() => new Enumerator(this);
+        IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
+
+        public struct Enumerator(TigerClasses.ListQueue<T> listQueue) : IEnumerator<T>, IEnumerator {
+            private int _index = -1;
+
+            public readonly T Current => listQueue[_index];
+            readonly object? IEnumerator.Current => Current;
+            public void Dispose() => _index = -1;
+            public bool MoveNext() => ++_index < listQueue.Count;
+            public void Reset() => _index = -1;
+        }
+        #endregion
+    }
+    #endregion
     #region 杂项
     public class CustomEqualityComparer<T>(Func<T?, T?, bool> equals, Func<T, int> getHashCode) : IEqualityComparer<T> {
         public bool Equals(T? x, T? y) => equals(x, y);
@@ -4815,6 +5153,24 @@ public static partial class TigerExtensions {
             }
         }
     }
+
+    #region Consume
+    public static void Consume<T>(this IEnumerable<T> enumerable) {
+        using var enumerator = enumerable.GetEnumerator();
+        while (enumerator.MoveNext()) { }
+    }
+    public static void Consume(this IEnumerable enumerable) {
+        var enumerator = enumerable.GetEnumerator();
+        if (enumerator is IDisposable disposable) {
+            using (disposable) {
+                while (enumerator.MoveNext()) { }
+            }
+        }
+        else {
+            while (enumerator.MoveNext()) { }
+        }
+    }
+    #endregion
     #endregion
     #region 数组和列表相关
     #region IList的Index和Range拓展
@@ -6105,14 +6461,14 @@ public static partial class TigerExtensions {
     /// <br/>获取列表中某个下标对应的值
     /// <br/>若超界则返回默认值
     /// </summary>
-    public static T? GetS<T>(this IList<T> list, int index) => index < 0 || index >= list.Count ? default : list[index];
+    public static T? GetS<T>(this IReadOnlyList<T> list, int index) => index < 0 || index >= list.Count ? default : list[index];
     /// <summary>
     /// <br/>获取列表中某个下标对应的值
     /// <br/>若超界则获得默认值
     /// <br/>获得的值由 out 参数带出
     /// <br/>返回是否获取成功
     /// </summary>
-    public static bool GetS<T>(this IList<T> list, int index, out T? value) {
+    public static bool GetS<T>(this IReadOnlyList<T> list, int index, out T? value) {
         if (index < 0 || index >= list.Count) {
             value = default;
             return false;
@@ -6121,12 +6477,12 @@ public static partial class TigerExtensions {
         return true;
     }
 
-    public static T? ElementAtS<T>(this IList<T> list, int index) => index < 0 || index >= list.Count ? default : list[index];
-    public static void ElementAsS<T>(this IList<T> list, int index, out T? value) => value = index < 0 || index >= list.Count ? default : list[index];
-    public static T GetS<T>(this IList<T> list, int index, T defaultValue) => index < 0 || index >= list.Count ? defaultValue : list[index];
-    public static void GetS<T>(this IList<T> list, int index, out T value, T defaultValue) => value = index < 0 || index >= list.Count ? defaultValue : list[index];
-    public static T ElementAtS<T>(this IList<T> list, int index, T defaultValue) => index < 0 || index >= list.Count ? defaultValue : list[index];
-    public static void ElementAsS<T>(this IList<T> list, int index, out T value, T defaultValue) => value = index < 0 || index >= list.Count ? defaultValue : list[index];
+    public static T? ElementAtS<T>(this IReadOnlyList<T> list, int index) => index < 0 || index >= list.Count ? default : list[index];
+    public static void ElementAsS<T>(this IReadOnlyList<T> list, int index, out T? value) => value = index < 0 || index >= list.Count ? default : list[index];
+    public static T GetS<T>(this IReadOnlyList<T> list, int index, T defaultValue) => index < 0 || index >= list.Count ? defaultValue : list[index];
+    public static void GetS<T>(this IReadOnlyList<T> list, int index, out T value, T defaultValue) => value = index < 0 || index >= list.Count ? defaultValue : list[index];
+    public static T ElementAtS<T>(this IReadOnlyList<T> list, int index, T defaultValue) => index < 0 || index >= list.Count ? defaultValue : list[index];
+    public static void ElementAsS<T>(this IReadOnlyList<T> list, int index, out T value, T defaultValue) => value = index < 0 || index >= list.Count ? defaultValue : list[index];
     #endregion
     #region 设置数组元素
     /// <summary>
