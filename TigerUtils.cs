@@ -1,4 +1,5 @@
 ﻿// #define TIGER_REFLECTION_EXTENSIONS
+#define TERRARIA
 
 global using static TigerUtilsLib.TigerClasses;
 global using static TigerUtilsLib.TigerStatics;
@@ -296,7 +297,7 @@ public static partial class TigerUtils {
     /// <br/>优先保证不小于<paramref name="left"/>
     /// </summary>
     public static T Clamp<T>(T self, T left, T right) where T : IComparable<T>
-        => self.CompareTo(left) < 0 ? left : self.CompareTo(right) > 0 ? right : self;
+        => self.CompareTo(left) <= 0 ? left : self.CompareTo(right) > 0 ? right : self;
     /// <summary>
     /// <br/>得到自身被限制在<paramref name="left"/>和<paramref name="right"/>之间的大小
     /// <br/>最好要保证<paramref name="left"/> 不大于 <paramref name="right"/>, 
@@ -304,7 +305,7 @@ public static partial class TigerUtils {
     /// <br/>优先保证不小于<paramref name="left"/>
     /// </summary>
     public static ref T ClampTo<T>(ref T self, T left, T right) where T : IComparable<T>
-        => ref Assign(ref self, self.CompareTo(left) < 0 ? left : self.CompareTo(right) > 0 ? right : self);
+        => ref Assign(ref self, self.CompareTo(left) <= 0 ? left : self.CompareTo(right) > 0 ? right : self);
     /// <summary>
     /// 得到自身被限制在<paramref name="left"/>和<paramref name="right"/>之间的大小
     /// 自动判断<paramref name="left"/>和<paramref name="right"/>的大小关系
@@ -324,7 +325,7 @@ public static partial class TigerUtils {
     /// <br/>优先保证不大于<paramref name="right"/>
     /// </summary>
     public static T ClampR<T>(T self, T left, T right) where T : IComparable<T>
-        => self.CompareTo(right) > 0 ? right : self.CompareTo(left) < 0 ? left : self;
+        => self.CompareTo(right) >= 0 ? right : self.CompareTo(left) < 0 ? left : self;
     /// <summary>
     /// <br/>得到自身被限制在<paramref name="left"/>和<paramref name="right"/>之间的大小
     /// <br/>最好要保证<paramref name="left"/> 不大于 <paramref name="right"/>, 
@@ -332,7 +333,7 @@ public static partial class TigerUtils {
     /// <br/>优先保证不大于<paramref name="right"/>
     /// </summary>
     public static ref T ClampToR<T>(ref T self, T left, T right) where T : IComparable<T>
-        => ref Assign(ref self, self.CompareTo(right) > 0 ? right : self.CompareTo(left) < 0 ? left : self);
+        => ref Assign(ref self, self.CompareTo(right) >= 0 ? right : self.CompareTo(left) < 0 ? left : self);
     #endregion
     #region IEnumerable拓展(包括Range)
     #region Range
@@ -3253,6 +3254,27 @@ public static partial class TigerUtils {
     public static T NotNull<T>([NotNull] T? self) => self!;
 #pragma warning restore CS8777 // 退出时，参数必须具有非 null 值。
     #endregion
+    #region InvokeMethodGroup
+    private static class MethodGroupCache<T> {
+        public static void Invoke(T self, string methodStart) {
+            ref var invoke = ref CollectionsMarshal.GetValueRefOrAddDefault(invokes, methodStart, out var exists);
+            if (exists) {
+                invoke!(self);
+                return;
+            }
+            invoke = CreateMethod<Action<T>>(string.Empty, il => {
+                foreach (var method in typeof(T).GetMethods(BFI)
+                    .Where(m => m.Name.StartsWith(methodStart) && m.ReturnType == typeof(void) && m.GetParameters().Length == 0)) {
+                    il.Emit(SOpCodes.Ldarg_0);
+                    il.Emit(SOpCodes.Callvirt, method);
+                }
+                il.Emit(SOpCodes.Ret);
+            });
+            invoke(self);
+        }
+        private static readonly Dictionary<string, Action<T>> invokes = [];
+    }
+    #endregion
     #region 杂项
     public static void Swap<T>(ref T left, ref T right) => (left, right) = (right, left);
     /// <summary>
@@ -3301,8 +3323,8 @@ public static partial class TigerUtils {
 public static partial class TigerClasses {
     public class ValueHolder<T>(T value) {
         public T Value = value;
-        public static implicit operator T(ValueHolder<T> holder) => holder.Value;
         public static implicit operator ValueHolder<T>(T value) => new(value);
+        public static implicit operator T(ValueHolder<T> holder) => holder.Value;
     }
     // 对标 Nullable, 但是适用于任意类型, 暂时没有处理 Equals 相关的内容
     public readonly struct Existable<T> {
@@ -3333,6 +3355,8 @@ public static partial class TigerClasses {
             }
             return value?.ToString() ?? "";
         }
+        public static implicit operator Existable<T>(T value) => new(value);
+        public static explicit operator T(Existable<T> existable) => existable.Value;
     }
     /// <summary>
     /// Value that is defaulted when got
@@ -4290,7 +4314,7 @@ public static partial class TigerExtensions {
     /// <br/>优先保证不小于<paramref name="left"/>
     /// </summary>
     public static T Clamp<T>(this T self, T left, T right) where T : IComparable<T>
-        => self.CompareTo(left) < 0 ? left : self.CompareTo(right) > 0 ? right : self;
+        => self.CompareTo(left) <= 0 ? left : self.CompareTo(right) > 0 ? right : self;
     /// <summary>
     /// <br/>得到自身被限制在<paramref name="left"/>和<paramref name="right"/>之间的大小
     /// <br/>最好要保证<paramref name="left"/> 不大于 <paramref name="right"/>, 
@@ -4298,7 +4322,7 @@ public static partial class TigerExtensions {
     /// <br/>优先保证不小于<paramref name="left"/>
     /// </summary>
     public static ref T ClampTo<T>(ref this T self, T left, T right) where T : struct, IComparable<T>
-        => ref self.Assign(self.CompareTo(left) < 0 ? left : self.CompareTo(right) > 0 ? right : self);
+        => ref self.Assign(self.CompareTo(left) <= 0 ? left : self.CompareTo(right) > 0 ? right : self);
     /// <summary>
     /// <br/>得到自身被限制在<paramref name="left"/>和<paramref name="right"/>之间的大小
     /// <br/>自动判断<paramref name="left"/>和<paramref name="right"/>的大小关系
@@ -4318,7 +4342,7 @@ public static partial class TigerExtensions {
     /// <br/>优先保证不大于<paramref name="right"/>
     /// </summary>
     public static T ClampR<T>(this T self, T left, T right) where T : IComparable<T>
-        => self.CompareTo(right) > 0 ? right : self.CompareTo(left) < 0 ? left : self;
+        => self.CompareTo(right) >= 0 ? right : self.CompareTo(left) < 0 ? left : self;
     /// <summary>
     /// <br/>得到自身被限制在<paramref name="left"/>和<paramref name="right"/>之间的大小
     /// <br/>最好要保证<paramref name="left"/> 不大于 <paramref name="right"/>, 
@@ -4326,7 +4350,7 @@ public static partial class TigerExtensions {
     /// <br/>优先保证不大于<paramref name="right"/>
     /// </summary>
     public static ref T ClampToR<T>(ref this T self, T left, T right) where T : struct, IComparable<T>
-        => ref self.Assign(self.CompareTo(right) > 0 ? right : self.CompareTo(left) < 0 ? left : self);
+        => ref self.Assign(self.CompareTo(right) >= 0 ? right : self.CompareTo(left) < 0 ? left : self);
     public static T ClampMin<T>(this T self, T min) where T : IComparable<T>
         => self.CompareTo(min) < 0 ? min : self;
     public static ref T ClampMinTo<T>(ref this T self, T min) where T : struct, IComparable<T>
@@ -4382,7 +4406,7 @@ public static partial class TigerExtensions {
     /// <br/>当自身为空时返回空
     /// </summary>
     public static ref T? ClampTo<T>(ref this T? self, T left, T right) where T : struct, IComparable<T>
-        => ref self.HasValue ? ref self.Assign(self.Value.CompareTo(left) < 0 ? left : self.Value.CompareTo(right) > 0 ? right : self) : ref self;
+        => ref self.HasValue ? ref self.Assign(self.Value.CompareTo(left) <= 0 ? left : self.Value.CompareTo(right) > 0 ? right : self) : ref self;
     /// <summary>
     /// <br/>得到自身被限制在<paramref name="left"/>和<paramref name="right"/>之间的大小
     /// <br/>自动判断<paramref name="left"/>和<paramref name="right"/>的大小关系
@@ -4398,7 +4422,7 @@ public static partial class TigerExtensions {
     /// <br/>当自身为空时返回空
     /// </summary>
     public static ref T? ClampToR<T>(ref this T? self, T left, T right) where T : struct, IComparable<T>
-        => ref self.HasValue ? ref self.Assign(self.Value.CompareTo(right) > 0 ? right : self.Value.CompareTo(left) < 0 ? left : self) : ref self;
+        => ref self.HasValue ? ref self.Assign(self.Value.CompareTo(right) >= 0 ? right : self.Value.CompareTo(left) < 0 ? left : self) : ref self;
     public static ref T? ClampMinTo<T>(ref this T? self, T min) where T : struct, IComparable<T>
         => ref self.HasValue ? ref self.Value.CompareTo(min) > 0 ? ref self : ref self.Assign(min) : ref self;
     public static ref T? ClampMaxTo<T>(ref this T? self, T max) where T : struct, IComparable<T>
@@ -4657,16 +4681,106 @@ public static partial class TigerExtensions {
     #endregion
     #endregion
 
-    #region Vector2  拓展
+    #region Vector234 拓展
+    #region ClampDistance
     public static Vector2 ClampDistance(this Vector2 self, Vector2 origin, float distance) {
         return distance <= 0 ? origin :
             Vector2.DistanceSquared(self, origin) <= distance * distance ? self :
             origin + (self - origin).SafeNormalize(Vector2.Zero) * distance;
     }
+    public static Vector3 ClampDistance(this Vector3 self, Vector3 origin, float distance) {
+        return distance <= 0 ? origin :
+            Vector3.DistanceSquared(self, origin) <= distance * distance ? self :
+            origin + (self - origin).SafeNormalize(Vector3.Zero) * distance;
+    }
+    public static Vector4 ClampDistance(this Vector4 self, Vector4 origin, float distance) {
+        return distance <= 0 ? origin :
+            Vector4.DistanceSquared(self, origin) <= distance * distance ? self :
+            origin + (self - origin).SafeNormalize(Vector4.Zero) * distance;
+    }
+    #endregion
+    #region SafeNormalize
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static Vector2 SafeNormalize(this Vector2 self, Vector2 defaultValue = default) {
         return self == Vector2.Zero || self.HasNaNs() ? defaultValue : Vector2.Normalize(self);
     }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector3 SafeNormalize(this Vector3 self, Vector3 defaultValue = default) {
+        return self == Vector3.Zero || self.HasNaNs() ? defaultValue : Vector3.Normalize(self);
+    }
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector4 SafeNormalize(this Vector4 self, Vector4 defaultValue = default) {
+        return self == Vector4.Zero || self.HasNaNs() ? defaultValue : Vector4.Normalize(self);
+    }
+    #endregion
+    #region HasNans
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static bool HasNaNs(this Vector2 vec) => float.IsNaN(vec.X) || float.IsNaN(vec.Y);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool HasNaNs(this Vector3 vec) => float.IsNaN(vec.X) || float.IsNaN(vec.Y) || float.IsNaN(vec.Z);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool HasNaNs(this Vector4 vec) => float.IsNaN(vec.X) || float.IsNaN(vec.Y) || float.IsNaN(vec.Z) || float.IsNaN(vec.W);
+    #endregion
+    #region Floor
+#if TERRARIA
+    private
+#else
+    public
+#endif
+        static Vector2 Floor(this Vector2 v) => new(MathF.Floor(v.X), MathF.Floor(v.Y));
+        public static Vector3 Floor(this Vector3 v) => new(MathF.Floor(v.X), MathF.Floor(v.Y), MathF.Floor(v.Z));
+        public static Vector4 Floor(this Vector4 v) => new(MathF.Floor(v.X), MathF.Floor(v.Y), MathF.Floor(v.Z), MathF.Floor(v.W));
+    #endregion
+    #region Between
+    public static bool BetweenO(this Vector2 v, Vector2 min, Vector2 max) => v.X.IsBetweenO(min.X, max.X) && v.Y.IsBetweenO(min.Y, max.Y);
+    public static bool BetweenO(this Vector3 v, Vector3 min, Vector3 max) => v.X.IsBetweenO(min.X, max.X) && v.Y.IsBetweenO(min.Y, max.Y) && v.Z.IsBetweenO(min.Z, max.Z);
+    public static bool BetweenO(this Vector4 v, Vector4 min, Vector4 max) => v.X.IsBetweenO(min.X, max.X) && v.Y.IsBetweenO(min.Y, max.Y) && v.Z.IsBetweenO(min.Z, max.Z) && v.W.IsBetweenO(min.W, max.W);
+    public static bool BetweenI(this Vector2 v, Vector2 min, Vector2 max) => v.X.IsBetweenI(min.X, max.X) && v.Y.IsBetweenI(min.Y, max.Y);
+    public static bool BetweenI(this Vector3 v, Vector3 min, Vector3 max) => v.X.IsBetweenI(min.X, max.X) && v.Y.IsBetweenI(min.Y, max.Y) && v.Z.IsBetweenI(min.Z, max.Z);
+    public static bool BetweenI(this Vector4 v, Vector4 min, Vector4 max) => v.X.IsBetweenI(min.X, max.X) && v.Y.IsBetweenI(min.Y, max.Y) && v.Z.IsBetweenI(min.Z, max.Z) && v.W.IsBetweenI(min.W, max.W);
+    #endregion
+    #region Distance & DistanceSquared
+#if TERRARIA
+    private
+#else
+    public
+#endif
+    static float Distance(this Vector2 origin, Vector2 target) => Vector2.Distance(origin, target);
+    public static float Distance(this Vector3 origin, Vector3 target) => Vector3.Distance(origin, target);
+    public static float Distance(this Vector4 origin, Vector4 target) => Vector4.Distance(origin, target);
+    public static float DistanceSquared(this Vector2 origin, Vector2 target) {
+        float x = origin.X - target.X;
+        float y = origin.Y - target.Y;
+        return x * x + y * y;
+    }
+    public static float DistanceSquared(this Vector3 origin, Vector3 target) {
+        float x = origin.X - target.X;
+        float y = origin.Y - target.Y;
+        float z = origin.Z - target.Z;
+        return x * x + y * y + z * z;
+    }
+    public static float DistanceSquared(this Vector4 origin, Vector4 target) {
+        float x = origin.X - target.X;
+        float y = origin.Y - target.Y;
+        float z = origin.Z - target.Z;
+        float w = origin.W - target.W;
+        return x * x + y * y + z * z + w * w;
+    }
+    #endregion
+    #region Vector2 旋转相关
+#if !TERRARIA
+    public static float ToRotation(Vector2 v) => MathF.Atan2(v.Y, v.X);
+    public static Vector2 ToRotationVector2(this float f) => new(MathF.Cos(f), MathF.Sin(f));
+#endif
+    public static Vector2 Rotated(this Vector2 spinningPoint, float radians, Vector2 center = default) => spinningPoint.Rotate(radians, center);
+    public static ref Vector2 Rotate(ref this Vector2 spinningPoint, float radians, Vector2 center = default) {
+        float cos = MathF.Cos(radians);
+        float sin = MathF.Sin(radians);
+        Vector2 delta = spinningPoint - center;
+        spinningPoint = center + new Vector2(delta.X * cos - delta.Y * sin, delta.X * sin + delta.Y * cos);
+        return ref spinningPoint;
+    }
+    #endregion
     #endregion
     #region IEnumerable拓展
     #region Foreach
@@ -4965,6 +5079,23 @@ public static partial class TigerExtensions {
         int result = 0;
         for (int i = 0; i < list.Count; ++i) {
             if (predicate(list[i])) {
+                result += 1;
+                continue;
+            }
+            if (result != 0) {
+                list[i - result] = list[i];
+            }
+        }
+        if (result > 0) {
+            list.RemoveRange(list.Count - result, result);
+        }
+        return result;
+    }
+    public static int RemoveAll<T>(this IList<T> list, Func<T, bool> predicate, Action<T> onRemove) {
+        int result = 0;
+        for (int i = 0; i < list.Count; ++i) {
+            if (predicate(list[i])) {
+                onRemove(list[i]);
                 result += 1;
                 continue;
             }
