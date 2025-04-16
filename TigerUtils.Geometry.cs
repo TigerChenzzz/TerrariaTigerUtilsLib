@@ -1,7 +1,13 @@
 ﻿using System;
+using static TigerUtilsLib.TigerClasses;
+
 
 #if XNA
 using XNARectangleI = Microsoft.Xna.Framework.Rectangle;
+#endif
+#if GODOT
+using GDRectangle = Godot.Rect2;
+using GDRectangleI = Godot.Rect2I;
 #endif
 
 namespace TigerUtilsLib;
@@ -602,6 +608,12 @@ partial class TigerClasses {
 #if XNA
         public static explicit operator XNARectangleI(Rect rect) => NewXNARectangleI(rect.X, rect.Y, rect.Width, rect.Height);
         public static implicit operator Rect(XNARectangleI rectangle) => new(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
+#endif
+#if GODOT
+        public static implicit operator GDRectangle(Rect rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
+        public static implicit operator Rect(GDRectangle rectangle) => new(rectangle.Position, rectangle.Size);
+        public static explicit operator GDRectangleI(Rect rect) => NewGDRectangleI(rect.X, rect.Y, rect.Width, rect.Height);
+        public static implicit operator Rect(GDRectangleI rectangle) => new(rectangle.Position, rectangle.Size);
 #endif
     }
     public struct Circle {

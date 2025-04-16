@@ -7,6 +7,14 @@ using XNAVector3 = Microsoft.Xna.Framework.Vector3;
 using XNAVector4 = Microsoft.Xna.Framework.Vector4;
 using XNAVector2I = Microsoft.Xna.Framework.Point;
 #endif
+#if GODOT
+using GDVector2 = Godot.Vector2;
+using GDVector3 = Godot.Vector3;
+using GDVector4 = Godot.Vector4;
+using GDVector2I = Godot.Vector2I;
+using GDVector3I = Godot.Vector3I;
+using GDVector4I = Godot.Vector4I;
+#endif
 
 namespace TigerUtilsLib;
 
@@ -102,6 +110,17 @@ partial class TigerClasses {
         public readonly float Length() => MathF.Sqrt(X * X + Y * Y);
         public readonly float DistanceSquaredTo(AnyVector2 vector) => (this - vector).LengthSquared();
         public readonly float DistanceTo(AnyVector2 vector) => (this - vector).Length();
+        public void ClampDistance(AnyVector2 origin, float distance) {
+            if (distance <= 0) {
+                this = origin;
+            }
+            if (DistanceSquaredTo(origin) > distance * distance) {
+                this = origin + (this - origin).Normalized() * distance;
+            }
+        }
+        public readonly AnyVector2 ClampedDistance(AnyVector2 origin, float distance)
+            => distance <= 0 ? origin : DistanceSquaredTo(origin) <= distance * distance ? this
+                : origin + (this - origin).Normalized() * distance;
         public void Normalize() {
             var lengthSquared = LengthSquared();
             if (lengthSquared == 0) {
@@ -139,14 +158,46 @@ partial class TigerClasses {
         public static AnyVector2 Normalized(AnyVector2 vec) => vec.Normalized();
         public static AnyVector2 SafeNormalized(AnyVector2 vec, AnyVector2 defaultValue = default) => vec.SafeNormalized(defaultValue);
         #endregion
+        #region 旋转
+        public readonly float ToRotation() => MathF.Atan2(Y, X);
+        public void Rotate(float radians, AnyVector2 center) {
+            var rotation = radians.ToRotationAnyVector2();
+            var delta = this - center;
+            this = center + new AnyVector2(delta.Cross(rotation), delta.Dot(rotation));
+        }
+        public void Rotate(float radians) {
+            var rotation = radians.ToRotationAnyVector2();
+            this = new(Cross(rotation), Dot(rotation));
+        }
+        public AnyVector2 Rotated(float radians, AnyVector2 center) {
+            var result = this;
+            result.Rotated(radians, center);
+            return result;
+        }
+        public AnyVector2 Rotated(float radians) {
+            var result = this;
+            result.Rotated(radians);
+            return result;
+        }
+        #endregion
         #region 转化
         public readonly AnyVector2 Abs() => new(MathF.Abs(X), MathF.Abs(Y));
         public readonly AnyVector2 Ceil() => new(MathF.Ceiling(X), MathF.Ceiling(Y));
         public readonly AnyVector2 Floor() => new(MathF.Floor(X), MathF.Floor(Y));
         public readonly AnyVector2 Round() => new(MathF.Round(X), MathF.Round(Y));
         public readonly AnyVector2 Sign() => new(MathF.Sign(X), MathF.Sign(Y));
+        public readonly AnyVector2I CeilI() => new((int)MathF.Ceiling(X), (int)MathF.Ceiling(Y));
+        public readonly AnyVector2I FloorI() => new((int)MathF.Floor(X), (int)MathF.Floor(Y));
+        public readonly AnyVector2I RoundI() => new((int)MathF.Round(X), (int)MathF.Round(Y));
+        public readonly AnyVector2I SignI() => new(MathF.Sign(X), MathF.Sign(Y));
         public readonly AnyVector2 CopySign(float sign) => new(MathF.CopySign(X, sign), MathF.CopySign(Y, sign));
         public readonly AnyVector2 CopySign(AnyVector2 signv) => new(MathF.CopySign(X, signv.X), MathF.CopySign(Y, signv.Y));
+        #endregion
+        #region 限制
+        public readonly bool IsBetweenO(AnyVector2 min, AnyVector2 max) => X.IsBetweenO(min.X, max.X) && Y.IsBetweenO(min.Y, max.Y);
+        public readonly bool IsBetweenI(AnyVector2 min, AnyVector2 max) => X.IsBetweenI(min.X, max.X) && Y.IsBetweenI(min.Y, max.Y);
+        public void ClampTo(AnyVector2 min, AnyVector2 max) { X.ClampTo(min.X, max.X); Y.ClampTo(min.Y, max.Y); }
+        public readonly AnyVector2 Clamp(AnyVector2 min, AnyVector2 max) => new(X.Clamp(min.X, max.X), Y.Clamp(min.Y, max.Y));
         #endregion
         public readonly float Dot(AnyVector2 other) => X * other.X + Y * other.Y;
         public readonly float Cross(AnyVector2 other) => X * other.Y - Y * other.X;
@@ -191,6 +242,20 @@ partial class TigerClasses {
         public static explicit operator AnyVector2(XNAVector4 vector) => new(vector.X, vector.Y);
         public static explicit operator XNAVector2I(AnyVector2 vector) => new((int)vector.X, (int)vector.Y);
         public static implicit operator AnyVector2(XNAVector2I vector) => new(vector.X, vector.Y);
+#endif
+#if GODOT
+        public static implicit operator GDVector2(AnyVector2 vector) => new(vector.X, vector.Y);
+        public static implicit operator AnyVector2(GDVector2 vector) => new(vector.X, vector.Y);
+        public static explicit operator GDVector3(AnyVector2 vector) => new(vector.X, vector.Y, 0);
+        public static explicit operator AnyVector2(GDVector3 vector) => new(vector.X, vector.Y);
+        public static explicit operator GDVector4(AnyVector2 vector) => new(vector.X, vector.Y, 0, 0);
+        public static explicit operator AnyVector2(GDVector4 vector) => new(vector.X, vector.Y);
+        public static explicit operator GDVector2I(AnyVector2 vector) => new((int)vector.X, (int)vector.Y);
+        public static implicit operator AnyVector2(GDVector2I vector) => new(vector.X, vector.Y);
+        public static explicit operator GDVector3I(AnyVector2 vector) => new((int)vector.X, (int)vector.Y, 0);
+        public static explicit operator AnyVector2(GDVector3I vector) => new(vector.X, vector.Y);
+        public static explicit operator GDVector4I(AnyVector2 vector) => new((int)vector.X, (int)vector.Y, 0, 0);
+        public static explicit operator AnyVector2(GDVector4I vector) => new(vector.X, vector.Y);
 #endif
         #endregion
     }
@@ -297,6 +362,12 @@ partial class TigerClasses {
         public readonly AnyVector2I CopySign(int sign) => new(int.CopySign(X, sign), int.CopySign(Y, sign));
         public readonly AnyVector2I CopySign(AnyVector2I signv) => new(int.CopySign(X, signv.X), int.CopySign(Y, signv.Y));
         #endregion
+        #region 限制
+        public readonly bool IsBetweenO(AnyVector2I min, AnyVector2I max) => X.IsBetweenO(min.X, max.X) && Y.IsBetweenO(min.Y, max.Y);
+        public readonly bool IsBetweenI(AnyVector2I min, AnyVector2I max) => X.IsBetweenI(min.X, max.X) && Y.IsBetweenI(min.Y, max.Y);
+        public void ClampTo(AnyVector2I min, AnyVector2I max) { X.ClampTo(min.X, max.X); Y.ClampTo(min.Y, max.Y); }
+        public readonly AnyVector2I Clamp(AnyVector2I min, AnyVector2I max) => new(X.Clamp(min.X, max.X), Y.Clamp(min.Y, max.Y));
+        #endregion
         public readonly int Dot(AnyVector2I other) => X * other.X + Y * other.Y;
         public readonly long LongDot(AnyVector2I other) => (long)X * other.X + (long)Y * other.Y;
         public readonly int Cross(AnyVector2I other) => X * other.Y - Y * other.X;
@@ -344,6 +415,20 @@ partial class TigerClasses {
         public static explicit operator AnyVector2I(XNAVector4 vector) => new((int)vector.X, (int)vector.Y);
         public static implicit operator XNAVector2I(AnyVector2I vector) => new(vector.X, vector.Y);
         public static implicit operator AnyVector2I(XNAVector2I vector) => new(vector.X, vector.Y);
+#endif
+#if GODOT
+        public static implicit operator GDVector2(AnyVector2I vector) => new(vector.X, vector.Y);
+        public static explicit operator AnyVector2I(GDVector2 vector) => new((int)vector.X);
+        public static explicit operator GDVector3(AnyVector2I vector) => new(vector.X, vector.Y, 0);
+        public static explicit operator AnyVector2I(GDVector3 vector) => new((int)vector.X, (int)vector.Y);
+        public static explicit operator GDVector4(AnyVector2I vector) => new(vector.X, vector.Y, 0, 0);
+        public static explicit operator AnyVector2I(GDVector4 vector) => new((int)vector.X, (int)vector.Y);
+        public static implicit operator GDVector2I(AnyVector2I vector) => new(vector.X, vector.Y);
+        public static implicit operator AnyVector2I(GDVector2I vector) => new(vector.X, vector.Y);
+        public static explicit operator GDVector3I(AnyVector2I vector) => new(vector.X, vector.Y, 0);
+        public static explicit operator AnyVector2I(GDVector3I vector) => new(vector.X, vector.Y);
+        public static explicit operator GDVector4I(AnyVector2I vector) => new(vector.X, vector.Y, 0, 0);
+        public static explicit operator AnyVector2I(GDVector4I vector) => new(vector.X, vector.Y);
 #endif
         #endregion
     }
@@ -538,6 +623,17 @@ partial class TigerClasses {
         public readonly float Length() => MathF.Sqrt(X * X + Y * Y + Z * Z);
         public readonly float DistanceSquaredTo(AnyVector3 vector) => (this - vector).LengthSquared();
         public readonly float DistanceTo(AnyVector3 vector) => (this - vector).Length();
+        public void ClampDistance(AnyVector3 origin, float distance) {
+            if (distance <= 0) {
+                this = origin;
+            }
+            if (DistanceSquaredTo(origin) > distance * distance) {
+                this = origin + (this - origin).Normalized() * distance;
+            }
+        }
+        public readonly AnyVector3 ClampedDistance(AnyVector3 origin, float distance)
+            => distance <= 0 ? origin : DistanceSquaredTo(origin) <= distance * distance ? this
+                : origin + (this - origin).Normalized() * distance;
         public void Normalize() {
             var lengthSquared = LengthSquared();
             if (lengthSquared == 0) {
@@ -581,8 +677,18 @@ partial class TigerClasses {
         public readonly AnyVector3 Floor() => new(MathF.Floor(X), MathF.Floor(Y), MathF.Floor(Z));
         public readonly AnyVector3 Round() => new(MathF.Round(X), MathF.Round(Y), MathF.Round(Z));
         public readonly AnyVector3 Sign() => new(MathF.Sign(X), MathF.Sign(Y), MathF.Sign(Z));
+        public readonly AnyVector3I CeilI() => new((int)MathF.Ceiling(X), (int)MathF.Ceiling(Y), (int)MathF.Ceiling(Z));
+        public readonly AnyVector3I FloorI() => new((int)MathF.Floor(X), (int)MathF.Floor(Y), (int)MathF.Floor(Z));
+        public readonly AnyVector3I RoundI() => new((int)MathF.Round(X), (int)MathF.Round(Y), (int)MathF.Round(Z));
+        public readonly AnyVector3I SignI() => new(MathF.Sign(X), MathF.Sign(Y), MathF.Sign(Z));
         public readonly AnyVector3 CopySign(float sign) => new(MathF.CopySign(X, sign), MathF.CopySign(Y, sign), MathF.CopySign(Z, sign));
         public readonly AnyVector3 CopySign(AnyVector3 signv) => new(MathF.CopySign(X, signv.X), MathF.CopySign(Y, signv.Y), MathF.CopySign(Z, signv.Z));
+        #endregion
+        #region 限制
+        public readonly bool IsBetweenO(AnyVector3 min, AnyVector3 max) => X.IsBetweenO(min.X, max.X) && Y.IsBetweenO(min.Y, max.Y) && Z.IsBetweenO(min.Z, max.Z);
+        public readonly bool IsBetweenI(AnyVector3 min, AnyVector3 max) => X.IsBetweenI(min.X, max.X) && Y.IsBetweenI(min.Y, max.Y) && Z.IsBetweenI(min.Z, max.Z);
+        public void ClampTo(AnyVector3 min, AnyVector3 max) { X.ClampTo(min.X, max.X); Y.ClampTo(min.Y, max.Y); Z.ClampTo(min.Z, max.Z); }
+        public readonly AnyVector3 Clamp(AnyVector3 min, AnyVector3 max) => new(X.Clamp(min.X, max.X), Y.Clamp(min.Y, max.Y), Z.Clamp(min.Z, max.Z));
         #endregion
         public readonly float Dot(AnyVector3 other) => X * other.X + Y * other.Y + Z * other.Z;
         public readonly AnyVector3 Cross(AnyVector3 other) => new(Y * other.Z - Z * other.Y, Z * other.X - X * other.Y, X * other.Y - Y * other.X);
@@ -631,6 +737,20 @@ partial class TigerClasses {
         public static explicit operator AnyVector3(XNAVector4 vector) => new(vector.X, vector.Y, vector.Z);
         public static explicit operator XNAVector2I(AnyVector3 vector) => new((int)vector.X, (int)vector.Y);
         public static explicit operator AnyVector3(XNAVector2I vector) => new(vector.X, vector.Y, 0);
+#endif
+#if GODOT
+        public static explicit operator GDVector2(AnyVector3 vector) => new(vector.X, vector.Y);
+        public static explicit operator AnyVector3(GDVector2 vector) => new(vector.X, vector.Y, 0);
+        public static implicit operator GDVector3(AnyVector3 vector) => new(vector.X, vector.Y, vector.Z);
+        public static implicit operator AnyVector3(GDVector3 vector) => new(vector.X, vector.Y, vector.Z);
+        public static explicit operator GDVector4(AnyVector3 vector) => new(vector.X, vector.Y, vector.Z, 0);
+        public static explicit operator AnyVector3(GDVector4 vector) => new(vector.X, vector.Y, vector.Z);
+        public static explicit operator GDVector2I(AnyVector3 vector) => new((int)vector.X, (int)vector.Y);
+        public static explicit operator AnyVector3(GDVector2I vector) => new(vector.X, vector.Y, 0);
+        public static explicit operator GDVector3I(AnyVector3 vector) => new((int)vector.X, (int)vector.Y, (int)vector.Z);
+        public static implicit operator AnyVector3(GDVector3I vector) => new(vector.X, vector.Y, vector.Z);
+        public static explicit operator GDVector4I(AnyVector3 vector) => new((int)vector.X, (int)vector.Y, (int)vector.Z, 0);
+        public static explicit operator AnyVector3(GDVector4I vector) => new(vector.X, vector.Y, vector.Z);
 #endif
         #endregion
     }
@@ -839,6 +959,12 @@ partial class TigerClasses {
         public readonly AnyVector3I CopySign(int sign) => new(int.CopySign(X, sign), int.CopySign(Y, sign), int.CopySign(Z, sign));
         public readonly AnyVector3I CopySign(AnyVector3I signv) => new(int.CopySign(X, signv.X), int.CopySign(Y, signv.Y), int.CopySign(Z, signv.Z));
         #endregion
+        #region 限制
+        public readonly bool IsBetweenO(AnyVector3I min, AnyVector3I max) => X.IsBetweenO(min.X, max.X) && Y.IsBetweenO(min.Y, max.Y) && Z.IsBetweenO(min.Z, max.Z);
+        public readonly bool IsBetweenI(AnyVector3I min, AnyVector3I max) => X.IsBetweenI(min.X, max.X) && Y.IsBetweenI(min.Y, max.Y) && Z.IsBetweenI(min.Z, max.Z);
+        public void ClampTo(AnyVector3I min, AnyVector3I max) { X.ClampTo(min.X, max.X); Y.ClampTo(min.Y, max.Y); Z.ClampTo(min.Z, max.Z); }
+        public readonly AnyVector3I Clamp(AnyVector3I min, AnyVector3I max) => new(X.Clamp(min.X, max.X), Y.Clamp(min.Y, max.Y), Z.Clamp(min.Z, max.Z));
+        #endregion
         public readonly int Dot(AnyVector3I other) => X * other.X + Y * other.Y + Z * other.Z;
         public readonly long LongDot(AnyVector3I other) => (long)X * other.X + (long)Y * other.Y + (long)Z * other.Z;
         public readonly AnyVector3I Cross(AnyVector3I other) => new(Y * other.Z - Z * other.Y, Z * other.X - X * other.Y, X * other.Y - Y * other.X);
@@ -889,6 +1015,20 @@ partial class TigerClasses {
         public static explicit operator AnyVector3I(XNAVector4 vector) => new((int)vector.X, (int)vector.Y, (int)vector.Z);
         public static explicit operator XNAVector2I(AnyVector3I vector) => new(vector.X, vector.Y);
         public static explicit operator AnyVector3I(XNAVector2I vector) => new(vector.X, vector.Y, 0);
+#endif
+#if GODOT
+        public static explicit operator GDVector2(AnyVector3I vector) => new(vector.X, vector.Y);
+        public static explicit operator AnyVector3I(GDVector2 vector) => new((int)vector.X, (int)vector.Y, 0);
+        public static implicit operator GDVector3(AnyVector3I vector) => new(vector.X, vector.Y, vector.Z);
+        public static explicit operator AnyVector3I(GDVector3 vector) => new((int)vector.X, (int)vector.Y, (int)vector.Z);
+        public static explicit operator GDVector4(AnyVector3I vector) => new(vector.X, vector.Y, vector.Z, 0);
+        public static explicit operator AnyVector3I(GDVector4 vector) => new((int)vector.X, (int)vector.Y, (int)vector.Z);
+        public static explicit operator GDVector2I(AnyVector3I vector) => new(vector.X, vector.Y);
+        public static explicit operator AnyVector3I(GDVector2I vector) => new(vector.X, vector.Y, 0);
+        public static implicit operator GDVector3I(AnyVector3I vector) => new(vector.X, vector.Y, vector.Z);
+        public static implicit operator AnyVector3I(GDVector3I vector) => new(vector.X, vector.Y, vector.Z);
+        public static explicit operator GDVector4I(AnyVector3I vector) => new(vector.X, vector.Y, vector.Z, 0);
+        public static explicit operator AnyVector3I(GDVector4I vector) => new(vector.X, vector.Y, vector.Z);
 #endif
         #endregion
     }
@@ -1318,6 +1458,17 @@ partial class TigerClasses {
         public readonly float Length() => MathF.Sqrt(X * X + Y * Y + Z * Z + W * W);
         public readonly float DistanceSquaredTo(AnyVector4 vector) => (this - vector).LengthSquared();
         public readonly float DistanceTo(AnyVector4 vector) => (this - vector).Length();
+        public void ClampDistance(AnyVector4 origin, float distance) {
+            if (distance <= 0) {
+                this = origin;
+            }
+            if (DistanceSquaredTo(origin) > distance * distance) {
+                this = origin + (this - origin).Normalized() * distance;
+            }
+        }
+        public readonly AnyVector4 ClampedDistance(AnyVector4 origin, float distance)
+            => distance <= 0 ? origin : DistanceSquaredTo(origin) <= distance * distance ? this
+                : origin + (this - origin).Normalized() * distance;
         public void Normalize() {
             var lengthSquared = LengthSquared();
             if (lengthSquared == 0) {
@@ -1361,8 +1512,18 @@ partial class TigerClasses {
         public readonly AnyVector4 Floor() => new(MathF.Floor(X), MathF.Floor(Y), MathF.Floor(Z), MathF.Floor(W));
         public readonly AnyVector4 Round() => new(MathF.Round(X), MathF.Round(Y), MathF.Round(Z), MathF.Round(W));
         public readonly AnyVector4 Sign() => new(MathF.Sign(X), MathF.Sign(Y), MathF.Sign(Z), MathF.Sign(W));
+        public readonly AnyVector4I CeilI() => new((int)MathF.Ceiling(X), (int)MathF.Ceiling(Y), (int)MathF.Ceiling(Z), (int)MathF.Ceiling(W));
+        public readonly AnyVector4I FloorI() => new((int)MathF.Floor(X), (int)MathF.Floor(Y), (int)MathF.Floor(Z), (int)MathF.Floor(W));
+        public readonly AnyVector4I RoundI() => new((int)MathF.Round(X), (int)MathF.Round(Y), (int)MathF.Round(Z), (int)MathF.Round(W));
+        public readonly AnyVector4I SignI() => new(MathF.Sign(X), MathF.Sign(Y), MathF.Sign(Z), MathF.Sign(W));
         public readonly AnyVector4 CopySign(float sign) => new(MathF.CopySign(X, sign), MathF.CopySign(Y, sign), MathF.CopySign(Z, sign), MathF.CopySign(W, sign));
         public readonly AnyVector4 CopySign(AnyVector4 signv) => new(MathF.CopySign(X, signv.X), MathF.CopySign(Y, signv.Y), MathF.CopySign(Z, signv.Z), MathF.CopySign(W, signv.W));
+        #endregion
+        #region 限制
+        public readonly bool IsBetweenO(AnyVector4 min, AnyVector4 max) => X.IsBetweenO(min.X, max.X) && Y.IsBetweenO(min.Y, max.Y) && Z.IsBetweenO(min.Z, max.Z) && W.IsBetweenO(min.W, max.W);
+        public readonly bool IsBetweenI(AnyVector4 min, AnyVector4 max) => X.IsBetweenI(min.X, max.X) && Y.IsBetweenI(min.Y, max.Y) && Z.IsBetweenI(min.Z, max.Z) && W.IsBetweenI(min.W, max.W);
+        public void ClampTo(AnyVector4 min, AnyVector4 max) { X.ClampTo(min.X, max.X); Y.ClampTo(min.Y, max.Y); Z.ClampTo(min.Z, max.Z); W.ClampTo(min.W, max.W); }
+        public readonly AnyVector4 Clamp(AnyVector4 min, AnyVector4 max) => new(X.Clamp(min.X, max.X), Y.Clamp(min.Y, max.Y), Z.Clamp(min.Z, max.Z), W.Clamp(min.W, max.W));
         #endregion
         public readonly float Dot(AnyVector4 other) => X * other.X + Y * other.Y + Z * other.Z + W * other.W;
         #endregion
@@ -1414,6 +1575,20 @@ partial class TigerClasses {
         public static implicit operator AnyVector4(XNAVector4 vector) => new(vector.X, vector.Y, vector.Z, vector.W);
         public static explicit operator XNAVector2I(AnyVector4 vector) => new((int)vector.X, (int)vector.Y);
         public static explicit operator AnyVector4(XNAVector2I vector) => new(vector.X, vector.Y, 0, 0);
+#endif
+#if GODOT
+        public static explicit operator GDVector2(AnyVector4 vector) => new(vector.X, vector.Y);
+        public static explicit operator AnyVector4(GDVector2 vector) => new(vector.X, vector.Y, 0, 0);
+        public static explicit operator GDVector3(AnyVector4 vector) => new(vector.X, vector.Y, vector.Z);
+        public static explicit operator AnyVector4(GDVector3 vector) => new(vector.X, vector.Y, vector.Z, 0);
+        public static implicit operator GDVector4(AnyVector4 vector) => new(vector.X, vector.Y, vector.Z, vector.W);
+        public static implicit operator AnyVector4(GDVector4 vector) => new(vector.X, vector.Y, vector.Z, vector.W);
+        public static explicit operator GDVector2I(AnyVector4 vector) => new((int)vector.X, (int)vector.Y);
+        public static explicit operator AnyVector4(GDVector2I vector) => new(vector.X, vector.Y, 0, 0);
+        public static explicit operator GDVector3I(AnyVector4 vector) => new((int)vector.X, (int)vector.Y, (int)vector.Z);
+        public static explicit operator AnyVector4(GDVector3I vector) => new(vector.X, vector.Y, vector.Z, 0);
+        public static explicit operator GDVector4I(AnyVector4 vector) => new((int)vector.X, (int)vector.Y, (int)vector.Z, (int)vector.W);
+        public static implicit operator AnyVector4(GDVector4I vector) => new(vector.X, vector.Y, vector.Z, vector.W);
 #endif
         #endregion
     }
@@ -1855,6 +2030,12 @@ partial class TigerClasses {
         public readonly AnyVector4I CopySign(int sign) => new(int.CopySign(X, sign), int.CopySign(Y, sign), int.CopySign(Z, sign), int.CopySign(W, sign));
         public readonly AnyVector4I CopySign(AnyVector4I signv) => new(int.CopySign(X, signv.X), int.CopySign(Y, signv.Y), int.CopySign(Z, signv.Z), int.CopySign(W, signv.W));
         #endregion
+        #region 限制
+        public readonly bool IsBetweenO(AnyVector4I min, AnyVector4I max) => X.IsBetweenO(min.X, max.X) && Y.IsBetweenO(min.Y, max.Y) && Z.IsBetweenO(min.Z, max.Z) && W.IsBetweenO(min.W, max.W);
+        public readonly bool IsBetweenI(AnyVector4I min, AnyVector4I max) => X.IsBetweenI(min.X, max.X) && Y.IsBetweenI(min.Y, max.Y) && Z.IsBetweenI(min.Z, max.Z) && W.IsBetweenI(min.W, max.W);
+        public void ClampTo(AnyVector4I min, AnyVector4I max) { X.ClampTo(min.X, max.X); Y.ClampTo(min.Y, max.Y); Z.ClampTo(min.Z, max.Z); W.ClampTo(min.W, max.W); }
+        public readonly AnyVector4I Clamp(AnyVector4I min, AnyVector4I max) => new(X.Clamp(min.X, max.X), Y.Clamp(min.Y, max.Y), Z.Clamp(min.Z, max.Z), W.Clamp(min.W, max.W));
+        #endregion
         public readonly int Dot(AnyVector4I other) => X * other.X + Y * other.Y + Z * other.Z + W * other.W;
         public readonly long LongDot(AnyVector4I other) => (long)X * other.X + (long)Y * other.Y + (long)Z * other.Z + (long)W * other.W;
         #endregion
@@ -1908,6 +2089,20 @@ partial class TigerClasses {
         public static explicit operator AnyVector4I(XNAVector4 vector) => new((int)vector.X, (int)vector.Y, (int)vector.Z, (int)vector.W);
         public static explicit operator XNAVector2I(AnyVector4I vector) => new(vector.X, vector.Y);
         public static explicit operator AnyVector4I(XNAVector2I vector) => new(vector.X, vector.Y, 0, 0);
+#endif
+#if GODOT
+        public static explicit operator GDVector2(AnyVector4I vector) => new(vector.X, vector.Y);
+        public static explicit operator AnyVector4I(GDVector2 vector) => new((int)vector.X, (int)vector.Y, 0, 0);
+        public static explicit operator GDVector3(AnyVector4I vector) => new(vector.X, vector.Y, vector.Z);
+        public static explicit operator AnyVector4I(GDVector3 vector) => new((int)vector.X, (int)vector.Y, (int)vector.Z, 0);
+        public static implicit operator GDVector4(AnyVector4I vector) => new(vector.X, vector.Y, vector.Z, vector.W);
+        public static explicit operator AnyVector4I(GDVector4 vector) => new((int)vector.X, (int)vector.Y, (int)vector.Z, (int)vector.W);
+        public static explicit operator GDVector2I(AnyVector4I vector) => new(vector.X, vector.Y);
+        public static explicit operator AnyVector4I(GDVector2I vector) => new(vector.X, vector.Y, 0, 0);
+        public static explicit operator GDVector3I(AnyVector4I vector) => new(vector.X, vector.Y, vector.Z);
+        public static explicit operator AnyVector4I(GDVector3I vector) => new(vector.X, vector.Y, vector.Z, 0);
+        public static implicit operator GDVector4I(AnyVector4I vector) => new(vector.X, vector.Y, vector.Z, vector.W);
+        public static implicit operator AnyVector4I(GDVector4I vector) => new(vector.X, vector.Y, vector.Z, vector.W);
 #endif
         #endregion
     }
