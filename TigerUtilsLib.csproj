@@ -5,19 +5,17 @@
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <EnablePathGenerator>false</EnablePathGenerator>
-    <EnableModBuilder>false</EnableModBuilder>
-    <DebugMod>None</DebugMod>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants>
       $(DefineConstants);
-      TERRARIA;
-      XNA;
+      GODOT;
     </DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Solaestas.tModLoader.ModBuilder" Version="1.6.1" />
-    <Publicize Include="ReLogic" />
+    <PackageReference Include="Godot.SourceGenerators" Version="4.5.0-dev.2" />
+    <PackageReference Include="GodotSharp" Version="4.5.0-dev.2" />
+    <PackageReference Include="GodotSharpEditor" Version="4.5.0-dev.2" />
+    <PackageReference Include="MonoMod.RuntimeDetour" Version="25.2.3" />
   </ItemGroup>
 </Project>
