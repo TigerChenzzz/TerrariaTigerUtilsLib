@@ -1,4 +1,5 @@
-﻿using log4net;
+﻿#if TERRARIA
+using log4net;
 using MonoMod.RuntimeDetour;
 using System;
 using System.Collections.Generic;
@@ -182,3 +183,4 @@ public static partial class TigerUtils {
         }
     }
 }
+#endif
