@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿#if TERRARIA
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using MonoMod.RuntimeDetour;
 using ReLogic.Content;
@@ -3856,3 +3857,4 @@ public static partial class TigerExtensions {
     }
     #endregion
 }
+#endif

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿#if TERRARIA
+using System.Collections.Generic;
 using System.Linq;
 using Terraria;
 using Terraria.Utilities;
@@ -58,3 +59,4 @@ public static class TigerExtensionsByUnifiedRandom {
     #endregion
     #endregion
 }
+#endif

@@ -1,6 +1,5 @@
 ﻿#nullable enable
 
-using Microsoft.Xna.Framework;
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -55,15 +54,15 @@ partial class TigerUtils {
         val = NewLerpValue(val, clamped, type, pars);
         return (int)(left * (1 - val) + right * val);
     }
-    public static Vector2 Lerp(Vector2 left, Vector2 right, float val, bool clamped = false, LerpType type = LerpType.Linear, params float[] pars) {
+    public static AnyVector2 Lerp(AnyVector2 left, AnyVector2 right, float val, bool clamped = false, LerpType type = LerpType.Linear, params float[] pars) {
         val = NewLerpValue(val, clamped, type, pars);
         return left * (1 - val) + right * val;
     }
-    public static Vector3 Lerp(Vector3 left, Vector3 right, float val, bool clamped = false, LerpType type = LerpType.Linear, params float[] pars) {
+    public static AnyVector3 Lerp(AnyVector3 left, AnyVector3 right, float val, bool clamped = false, LerpType type = LerpType.Linear, params float[] pars) {
         val = NewLerpValue(val, clamped, type, pars);
         return left * (1 - val) + right * val;
     }
-    public static Vector4 Lerp(Vector4 left, Vector4 right, float val, bool clamped = false, LerpType type = LerpType.Linear, params float[] pars) {
+    public static AnyVector4 Lerp(AnyVector4 left, AnyVector4 right, float val, bool clamped = false, LerpType type = LerpType.Linear, params float[] pars) {
         val = NewLerpValue(val, clamped, type, pars);
         return left * (1 - val) + right * val;
     }
@@ -80,15 +79,15 @@ partial class TigerUtils {
         val = NewLerpValue(val, clamped, type, pars);
         return (int)(left * (1 - val) + right * val);
     }
-    public static Vector2 Lerp(Vector2 left, Vector2 right, double val, bool clamped = false, LerpType type = LerpType.Linear, params double[] pars) {
+    public static AnyVector2 Lerp(AnyVector2 left, AnyVector2 right, double val, bool clamped = false, LerpType type = LerpType.Linear, params double[] pars) {
         val = NewLerpValue(val, clamped, type, pars);
         return new(LerpF(left.X, right.X, val), LerpF(left.Y, right.Y, val));
     }
-    public static Vector3 Lerp(Vector3 left, Vector3 right, double val, bool clamped = false, LerpType type = LerpType.Linear, params double[] pars) {
+    public static AnyVector3 Lerp(AnyVector3 left, AnyVector3 right, double val, bool clamped = false, LerpType type = LerpType.Linear, params double[] pars) {
         val = NewLerpValue(val, clamped, type, pars);
         return new(LerpF(left.X, right.X, val), LerpF(left.Y, right.Y, val), LerpF(left.Z, right.Z, val));
     }
-    public static Vector4 Lerp(Vector4 left, Vector4 right, double val, bool clamped = false, LerpType type = LerpType.Linear, params double[] pars) {
+    public static AnyVector4 Lerp(AnyVector4 left, AnyVector4 right, double val, bool clamped = false, LerpType type = LerpType.Linear, params double[] pars) {
         val = NewLerpValue(val, clamped, type, pars);
         return new(LerpF(left.X, right.X, val), LerpF(left.Y, right.Y, val), LerpF(left.Z, right.Z, val), LerpF(left.W, right.W, val));
     }
@@ -102,15 +101,15 @@ partial class TigerUtils {
         val = model.NewLerpValue(val, clamped);
         return (int)(left * (1 - val) + right * val);
     }
-    public static Vector2 Lerp(Vector2 left, Vector2 right, float val, bool clamped, IFloatLerpModel model) {
+    public static AnyVector2 Lerp(AnyVector2 left, AnyVector2 right, float val, bool clamped, IFloatLerpModel model) {
         val = model.NewLerpValue(val, clamped);
         return left * (1 - val) + right * val;
     }
-    public static Vector3 Lerp(Vector3 left, Vector3 right, float val, bool clamped, IFloatLerpModel model) {
+    public static AnyVector3 Lerp(AnyVector3 left, AnyVector3 right, float val, bool clamped, IFloatLerpModel model) {
         val = model.NewLerpValue(val, clamped);
         return left * (1 - val) + right * val;
     }
-    public static Vector4 Lerp(Vector4 left, Vector4 right, float val, bool clamped, IFloatLerpModel model) {
+    public static AnyVector4 Lerp(AnyVector4 left, AnyVector4 right, float val, bool clamped, IFloatLerpModel model) {
         val = model.NewLerpValue(val, clamped);
         return left * (1 - val) + right * val;
     }
@@ -127,15 +126,15 @@ partial class TigerUtils {
         val = model.NewLerpValue(val, clamped);
         return (int)(left * (1 - val) + right * val);
     }
-    public static Vector2 Lerp(Vector2 left, Vector2 right, double val, bool clamped, IDoubleLerpModel model) {
+    public static AnyVector2 Lerp(AnyVector2 left, AnyVector2 right, double val, bool clamped, IDoubleLerpModel model) {
         val = model.NewLerpValue(val, clamped);
         return new(LerpF(left.X, right.X, val), LerpF(left.Y, right.Y, val));
     }
-    public static Vector3 Lerp(Vector3 left, Vector3 right, double val, bool clamped, IDoubleLerpModel model) {
+    public static AnyVector3 Lerp(AnyVector3 left, AnyVector3 right, double val, bool clamped, IDoubleLerpModel model) {
         val = model.NewLerpValue(val, clamped);
         return new(LerpF(left.X, right.X, val), LerpF(left.Y, right.Y, val), LerpF(left.Z, right.Z, val));
     }
-    public static Vector4 Lerp(Vector4 left, Vector4 right, double val, bool clamped, IDoubleLerpModel model) {
+    public static AnyVector4 Lerp(AnyVector4 left, AnyVector4 right, double val, bool clamped, IDoubleLerpModel model) {
         val = model.NewLerpValue(val, clamped);
         return new(LerpF(left.X, right.X, val), LerpF(left.Y, right.Y, val), LerpF(left.Z, right.Z, val), LerpF(left.W, right.W, val));
     }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if TERRARIA
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
@@ -474,3 +475,4 @@ public static class TigerIEnumerableRandomExtensionsByUnifiedRandom {
     }
     #endregion
 }
+#endif
