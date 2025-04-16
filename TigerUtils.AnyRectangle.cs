@@ -4,6 +4,10 @@ using System.Diagnostics.CodeAnalysis;
 #if XNA
 using XNARectangleI = Microsoft.Xna.Framework.Rectangle;
 #endif
+#if GODOT
+using GDRectangle = Godot.Rect2;
+using GDRectangleI = Godot.Rect2I;
+#endif
 
 namespace TigerUtilsLib;
 
@@ -155,6 +159,12 @@ partial class TigerClasses {
         public static explicit operator XNARectangleI(AnyRectangle rectangle) => NewXNARectangleI(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
         public static implicit operator AnyRectangle(XNARectangleI rectangle) => new(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
 #endif
+#if GODOT
+        public static implicit operator GDRectangle(AnyRectangle rectangle) => new(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
+        public static implicit operator AnyRectangle(GDRectangle rectangle) => new(rectangle.Position.X, rectangle.Position.Y, rectangle.Size.X, rectangle.Size.Y);
+        public static explicit operator GDRectangleI(AnyRectangle rectangle) => new((int)rectangle.X, (int)rectangle.Y, (int)rectangle.Width, (int)rectangle.Height);
+        public static implicit operator AnyRectangle(GDRectangleI rectangle) => new(rectangle.Position.X, rectangle.Position.Y, rectangle.Size.X, rectangle.Size.Y);
+#endif
         #endregion
     }
     public struct AnyRectangleI : IEquatable<AnyRectangleI> {
@@ -305,6 +315,12 @@ partial class TigerClasses {
 #if XNA
         public static implicit operator XNARectangleI(AnyRectangleI rectangle) => new(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
         public static implicit operator AnyRectangleI(XNARectangleI rectangle) => new(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
+#endif
+#if GODOT
+        public static implicit operator GDRectangle(AnyRectangleI rectangle) => new(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
+        public static explicit operator AnyRectangleI(GDRectangle rectangle) => CreateFromFloat(rectangle.Position.X, rectangle.Position.Y, rectangle.Size.X, rectangle.Size.Y);
+        public static implicit operator GDRectangleI(AnyRectangleI rectangle) => new(rectangle.X, rectangle.Y, rectangle.Width, rectangle.Height);
+        public static implicit operator AnyRectangleI(GDRectangleI rectangle) => new(rectangle.Position.X, rectangle.Position.Y, rectangle.Size.X, rectangle.Size.Y);
 #endif
         #endregion
     }
