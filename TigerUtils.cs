@@ -2918,16 +2918,16 @@ public static partial class TigerUtils {
     #endregion
     #endregion
     #region 创建方法 CreateMethod
-    public static TDelegate CreateMethod<TDelegate>(string name, Action<ILGenerator> generate) where TDelegate : Delegate {
-        var invoke = typeof(TDelegate).GetMethod("Invoke", BFI)
+    public static Delegate CreateMethod(Type delegateType, string name, Action<ILGenerator> generate) {
+        var invoke = delegateType.GetMethod("Invoke", BFI)
             ?? throw new ArgumentException("TDelegate must have exact one instance \"Invoke\" method");
         DynamicMethod method = new(name, invoke.ReturnType, invoke.GetParameters().Select(p => p.ParameterType).ToArray(), true);
         var il = method.GetILGenerator();
         generate(il);
-        return method.CreateDelegate<TDelegate>();
+        return method.CreateDelegate(delegateType);
     }
-    public static TDelegate CreateMethod<TDelegate>(string name, IEnumerable<(SOpCode opCode, object? operand)> instrs) where TDelegate : Delegate {
-        return CreateMethod<TDelegate>(name, il => {
+    public static Delegate CreateMethod(Type delegateType, string name, IEnumerable<(SOpCode opCode, object? operand)> instrs) {
+        return CreateMethod(delegateType, name, il => {
             foreach (var instr in instrs) {
                 var opCode = instr.opCode;
                 switch (instr.operand) {
@@ -2988,9 +2988,15 @@ public static partial class TigerUtils {
             }
         });
     }
-    public static TDelegate CreateMethod<TDelegate>(string name, params (SOpCode opCode, object? operand)[] instrs) where TDelegate : Delegate {
-        return CreateMethod<TDelegate>(name, (IEnumerable<(SOpCode opCode, object? operand)>)instrs);
+    public static Delegate CreateMethod(Type delegateType, string name, params (SOpCode opCode, object? operand)[] instrs) {
+        return CreateMethod(delegateType, name, (IEnumerable<(SOpCode opCode, object? operand)>)instrs);
     }
+    public static TDelegate CreateMethod<TDelegate>(string name, Action<ILGenerator> generate) where TDelegate : Delegate
+        => (TDelegate)CreateMethod(typeof(TDelegate), name, generate);
+    public static TDelegate CreateMethod<TDelegate>(string name, IEnumerable<(SOpCode opCode, object? operand)> instrs) where TDelegate : Delegate
+        => (TDelegate)CreateMethod(typeof(TDelegate), name, instrs);
+    public static TDelegate CreateMethod<TDelegate>(string name, params (SOpCode opCode, object? operand)[] instrs) where TDelegate : Delegate
+        => (TDelegate)CreateMethod(typeof(TDelegate), name, instrs);
     #endregion
     #region Clone
     private static Lazy<Func<object, object>> memberwiseCloneFunc = new(() => GetMethodDelegate<object, Func<object, object>>("MemberwiseClone"));
