@@ -1,4 +1,4 @@
-﻿global using static TigerUtilsLib.TigerClasses;
+global using static TigerUtilsLib.TigerClasses;
 global using static TigerUtilsLib.TigerStatics;
 global using static TigerUtilsLib.TigerUtils;
 using Mono.Cecil;
@@ -3680,6 +3680,47 @@ public static partial class TigerClasses {
         #endregion
     }
     #endregion
+    #region BitsByte
+    // from Terraria
+    public struct BitsByte {
+        public byte Value { get; set; }
+        public bool this[int key] {
+            get => (Value & (1 << key)) != 0;
+            set {
+                if (value) {
+                    Value |= (byte)(1 << key);
+                }
+                else {
+                    Value &= (byte)~(1 << key);
+                }
+            }
+        }
+        public BitsByte(bool b0, bool b1 = false, bool b2 = false, bool b3 = false, bool b4 = false, bool b5 = false, bool b6 = false, bool b7 = false) {
+            this[0] = b0;
+            this[1] = b1;
+            this[2] = b2;
+            this[3] = b3;
+            this[4] = b4;
+            this[5] = b5;
+            this[6] = b6;
+            this[7] = b7;
+        }
+        public BitsByte(byte value) => Value = value;
+        public void ClearAll() => Value = 0;
+        public void SetAll() => Value = byte.MaxValue;
+
+        public static implicit operator byte(BitsByte bb) => bb.Value;
+        public static implicit operator BitsByte(byte b) => new(b);
+
+        public override string ToString() {
+            Span<char> chars = stackalloc char[8];
+            for (int i =0; i < 8; ++i) {
+                chars[i] = this[i] ? '1' : '0';
+            }
+            return new(chars);
+        }
+    }
+    #endregion
     #region 杂项
     public class CustomEqualityComparer<T>(Func<T?, T?, bool> equals, Func<T, int> getHashCode) : IEqualityComparer<T> {
         public bool Equals(T? x, T? y) => equals(x, y);
@@ -3691,6 +3732,9 @@ public static partial class TigerClasses {
     public class ComparisonComparer<T>(Comparison<T> comparison) : IComparer<T> {
         private readonly Comparison<T> _comparison = comparison;
         public int Compare(T? x, T? y) => _comparison(NotNull(x), NotNull(y));
+    }
+    public readonly struct DisposeWrapper(Action action) : IDisposable {
+        public void Dispose() => action();
     }
     #endregion
 }
@@ -5367,6 +5411,11 @@ public static partial class TigerExtensions {
         }
         foreach (var r in toRemove) {
             list.Remove(r);
+        }
+    }
+    public static void RemoveRange<T>(this ICollection<T> list, IEnumerable<T> elements) {
+        foreach (var e in elements) {
+            list.Remove(e);
         }
     }
     #endregion
