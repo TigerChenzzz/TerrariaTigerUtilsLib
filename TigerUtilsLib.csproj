@@ -14,10 +14,12 @@
       $(DefineConstants);
       TERRARIA;
       XNA;
+      ZLINQ;
     </DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Solaestas.tModLoader.ModBuilder" Version="1.6.1" />
     <Publicize Include="ReLogic" />
+    <PackageReference Include="ZLinq" Version="1.4.9" />
   </ItemGroup>
 </Project>
