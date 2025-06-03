@@ -35,12 +35,19 @@ partial class TigerClasses {
             IEnumerable<TKey>? NodesAfter = null,
             IEnumerable<TKey>? NodesBefore = null) : INode;
         public interface INode {
+            /// <summary>节点的键</summary>
             public TKey Key { get; }
+            /// <summary>节点的值</summary>
             public TValue Value { get; }
+            /// <summary>节点的优先度</summary>
             public TPriority Priority { get; }
+            /// <summary>表示将此节点放在哪些节点之后</summary>
             public IEnumerable<TKey>? After { get; }
+            /// <summary>表示将此节点放在哪些节点之前</summary>
             public IEnumerable<TKey>? Before { get; }
+            /// <summary>表示将哪些节点放在此节点之后</summary>
             public IEnumerable<TKey>? NodesAfter { get; }
+            /// <summary>表示将哪些节点放在此节点之前</summary>
             public IEnumerable<TKey>? NodesBefore { get; }
         }
         #endregion
@@ -416,11 +423,17 @@ partial class TigerClasses {
             IEnumerable<TKey>? NodesAfter = null,
             IEnumerable<TKey>? NodesBefore = null) : INode;
         public interface INode {
+            /// <summary>节点的值</summary>
             public TValue Value { get; }
+            /// <summary>节点的优先度</summary>
             public TPriority Priority { get; }
+            /// <summary>表示将此节点放在哪些节点之后</summary>
             public IEnumerable<TKey>? After { get; }
+            /// <summary>表示将此节点放在哪些节点之前</summary>
             public IEnumerable<TKey>? Before { get; }
+            /// <summary>表示将哪些节点放在此节点之后</summary>
             public IEnumerable<TKey>? NodesAfter { get; }
+            /// <summary>表示将哪些节点放在此节点之前</summary>
             public IEnumerable<TKey>? NodesBefore { get; }
         }
         #endregion
@@ -796,11 +809,17 @@ partial class TigerClasses {
         IEnumerable<TKey>? NodesAfter = null,
         IEnumerable<TKey>? NodesBefore = null) : IPriorityGraphPNode<TKey, TValue> where TKey : notnull;
     public interface IPriorityGraphPNode<TKey, TValue> where TKey : notnull {
+        /// <summary>节点的键</summary>
         public TKey Key { get; }
+        /// <summary>节点的值</summary>
         public TValue Value { get; }
+        /// <summary>表示将此节点放在哪些节点之后</summary>
         public IEnumerable<TKey>? After { get; }
+        /// <summary>表示将此节点放在哪些节点之前</summary>
         public IEnumerable<TKey>? Before { get; }
+        /// <summary>表示将哪些节点放在此节点之后</summary>
         public IEnumerable<TKey>? NodesAfter { get; }
+        /// <summary>表示将哪些节点放在此节点之前</summary>
         public IEnumerable<TKey>? NodesBefore { get; }
     }
     #endregion
@@ -1174,10 +1193,15 @@ partial class TigerClasses {
         IEnumerable<TKey>? NodesAfter = null,
         IEnumerable<TKey>? NodesBefore = null) : IPriorityGraphSNode<TKey, TValue> where TKey : notnull;
     public interface IPriorityGraphSNode<TKey, TValue> where TKey : notnull {
+        /// <summary>节点的值</summary>
         public TValue Value { get; }
+        /// <summary>表示将此节点放在哪些节点之后</summary>
         public IEnumerable<TKey>? After { get; }
+        /// <summary>表示将此节点放在哪些节点之前</summary>
         public IEnumerable<TKey>? Before { get; }
+        /// <summary>表示将哪些节点放在此节点之后</summary>
         public IEnumerable<TKey>? NodesAfter { get; }
+        /// <summary>表示将哪些节点放在此节点之前</summary>
         public IEnumerable<TKey>? NodesBefore { get; }
     }
     #endregion
@@ -1555,11 +1579,17 @@ partial class TigerClasses {
             IEnumerable<TKey>? NodesAfter = null,
             IEnumerable<TKey>? NodesBefore = null) : INode;
         public interface INode {
+            /// <summary>节点的键</summary>
             public TKey Key { get; }
+            /// <summary>节点的优先度</summary>
             public TPriority Priority { get; }
+            /// <summary>表示将此节点放在哪些节点之后</summary>
             public IEnumerable<TKey>? After { get; }
+            /// <summary>表示将此节点放在哪些节点之前</summary>
             public IEnumerable<TKey>? Before { get; }
+            /// <summary>表示将哪些节点放在此节点之后</summary>
             public IEnumerable<TKey>? NodesAfter { get; }
+            /// <summary>表示将哪些节点放在此节点之前</summary>
             public IEnumerable<TKey>? NodesBefore { get; }
         }
         #endregion
@@ -1933,10 +1963,15 @@ partial class TigerClasses {
         IEnumerable<TKey>? NodesAfter = null,
         IEnumerable<TKey>? NodesBefore = null) : IPriorityGraphPNode<TKey> where TKey : notnull;
     public interface IPriorityGraphPNode<TKey> where TKey : notnull {
+        /// <summary>节点的键</summary>
         public TKey Key { get; }
+        /// <summary>表示将此节点放在哪些节点之后</summary>
         public IEnumerable<TKey>? After { get; }
+        /// <summary>表示将此节点放在哪些节点之前</summary>
         public IEnumerable<TKey>? Before { get; }
+        /// <summary>表示将哪些节点放在此节点之后</summary>
         public IEnumerable<TKey>? NodesAfter { get; }
+        /// <summary>表示将哪些节点放在此节点之前</summary>
         public IEnumerable<TKey>? NodesBefore { get; }
     }
     #endregion

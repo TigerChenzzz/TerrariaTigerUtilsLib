@@ -2,7 +2,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using ZLinq;
 
 namespace TigerUtilsLib;
@@ -14,7 +13,7 @@ partial class TigerClasses {
 #else
     public struct
 #endif
-        Filter<TEnumerator, TSource, TResult>(TEnumerator source, Func<TSource, StrongBox<TResult>> filter) : IValueEnumerator<TResult>
+        Filter<TEnumerator, TSource, TResult>(TEnumerator source, Func<TSource, Existable<TResult>> filter) : IValueEnumerator<TResult>
         where TEnumerator : struct, IValueEnumerator<TSource>
 #if NET9_0_OR_GREATER
         , allows ref struct
@@ -27,8 +26,8 @@ partial class TigerClasses {
         public bool TryGetNext(out TResult current) {
             while (source.TryGetNext(out var value)) {
                 var box = filter(value);
-                if (box != null) {
-                    current = box.Value!;
+                if (box.HasValue) {
+                    current = box.Value;
                     return true;
                 }
             }
@@ -139,7 +138,7 @@ static partial class TigerExtensions {
     #endregion
     #region Filter
     public static ValueEnumerable<Filter<TEnumerator, TSource, TResult>, TResult> Filter<TEnumerator, TSource, TResult>(
-        this ValueEnumerable<TEnumerator, TSource> source, Func<TSource, StrongBox<TResult>> filter)
+        this ValueEnumerable<TEnumerator, TSource> source, Func<TSource, Existable<TResult>> filter)
         where TEnumerator : struct, IValueEnumerator<TSource>
 #if NET9_0_OR_GREATER
         , allows ref struct
