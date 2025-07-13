@@ -831,7 +831,7 @@ public static partial class TigerUtils {
         /// <br/>根据 TextSnippet.UniqueDraw 返回的 Size 调整行高
         /// <br/>处理换行方式修改
         /// <br/><paramref name="maxWidth"/> 为 0 时也视为限宽
-        /// <br/><paramref name="baseScae"/> 变为 float
+        /// <br/><paramref name="baseScale"/> 变为 float
         /// <br/>返回值现在是大小而不是右下角的位置
         /// </summary>
         public static Vector2 DrawColorCodedString(SpriteBatch spriteBatch, DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, Vector2 position, Color baseColor, float rotation, Vector2 origin, float baseScale, out int hoveredSnippet, float maxWidth, bool ignoreColors,
@@ -3783,6 +3783,36 @@ public static partial class TigerExtensions {
         self.Elements.InsertRange(index, children);
         foreach (var child in children) {
             child.Recalculate();
+        }
+    }
+    #endregion
+    #region ReplaceChildrenByIndex
+    /// <summary>
+    /// 返回被替换掉的元素
+    /// </summary>
+    /// <param name="remove">是否将 <paramref name="element"/> 从原父节点移除</param>
+    public static UIElement ReplaceChildrenByIndex(this UIElement self, int index, UIElement element, bool remove = false) {
+        if (remove) {
+            if (element.Parent == self) {
+                return element;
+            }
+            var result = self.Elements[index];
+            result.Parent = null;
+            element.Remove();
+            self.Elements[index] = element;
+            element.Parent = self;
+            element.Recalculate();
+            return result;
+        }
+        else {
+            var result = self.Elements[index];
+            if (result == element) {
+                return element;
+            }
+            self.Elements[index] = element;
+            element.Parent = self;
+            element.Recalculate();
+            return result;
         }
     }
     #endregion
