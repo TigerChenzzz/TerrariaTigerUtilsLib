@@ -2921,12 +2921,12 @@ public static partial class TigerUtils {
     public static Delegate CreateMethod(Type delegateType, string name, Action<ILGenerator> generate) {
         var invoke = delegateType.GetMethod("Invoke", BFI)
             ?? throw new ArgumentException("TDelegate must have exact one instance \"Invoke\" method");
-        DynamicMethod method = new(name, invoke.ReturnType, invoke.GetParameters().Select(p => p.ParameterType).ToArray(), true);
+        DynamicMethod method = new(name, invoke.ReturnType, [.. invoke.GetParameters().Select(p => p.ParameterType)], true);
         var il = method.GetILGenerator();
         generate(il);
         return method.CreateDelegate(delegateType);
     }
-    public static Delegate CreateMethod(Type delegateType, string name, IEnumerable<(SOpCode opCode, object? operand)> instrs) {
+    public static Delegate CreateMethod(Type delegateType, string name, params IEnumerable<(SOpCode opCode, object? operand)> instrs) {
         return CreateMethod(delegateType, name, il => {
             foreach (var instr in instrs) {
                 var opCode = instr.opCode;
@@ -2988,14 +2988,9 @@ public static partial class TigerUtils {
             }
         });
     }
-    public static Delegate CreateMethod(Type delegateType, string name, params (SOpCode opCode, object? operand)[] instrs) {
-        return CreateMethod(delegateType, name, (IEnumerable<(SOpCode opCode, object? operand)>)instrs);
-    }
     public static TDelegate CreateMethod<TDelegate>(string name, Action<ILGenerator> generate) where TDelegate : Delegate
         => (TDelegate)CreateMethod(typeof(TDelegate), name, generate);
-    public static TDelegate CreateMethod<TDelegate>(string name, IEnumerable<(SOpCode opCode, object? operand)> instrs) where TDelegate : Delegate
-        => (TDelegate)CreateMethod(typeof(TDelegate), name, instrs);
-    public static TDelegate CreateMethod<TDelegate>(string name, params (SOpCode opCode, object? operand)[] instrs) where TDelegate : Delegate
+    public static TDelegate CreateMethod<TDelegate>(string name, params IEnumerable<(SOpCode opCode, object? operand)> instrs) where TDelegate : Delegate
         => (TDelegate)CreateMethod(typeof(TDelegate), name, instrs);
     #endregion
     #region Clone
@@ -3127,7 +3122,7 @@ public static partial class TigerClasses {
     /// <summary>
     /// Value that is defaulted when got
     /// </summary>
-    [Obsolete($"线程不安全, 使用{nameof(Lazy<T>)}代替")]
+    [Obsolete($"线程不安全, 使用{nameof(Lazy<>)}代替")]
     public class ValueDG<T>(Func<T> getDefaultValue) {
         private T? value;
         private bool got;
@@ -3685,7 +3680,7 @@ public static partial class TigerClasses {
     public struct BitsByte {
         public byte Value { get; set; }
         public bool this[int key] {
-            get => (Value & (1 << key)) != 0;
+            readonly get => (Value & (1 << key)) != 0;
             set {
                 if (value) {
                     Value |= (byte)(1 << key);
@@ -3712,7 +3707,7 @@ public static partial class TigerClasses {
         public static implicit operator byte(BitsByte bb) => bb.Value;
         public static implicit operator BitsByte(byte b) => new(b);
 
-        public override string ToString() {
+        public readonly override string ToString() {
             Span<char> chars = stackalloc char[8];
             for (int i =0; i < 8; ++i) {
                 chars[i] = this[i] ? '1' : '0';
@@ -4017,7 +4012,7 @@ public static partial class TigerExtensions {
                 modifier[i] = true;
             }
         }
-        var result = type.GetMethod(name, bindingAttr, binder: null, invoke.GetParameters().Select(p => p.ParameterType).ToArray(), modifiers: [modifier]);
+        var result = type.GetMethod(name, bindingAttr, binder: null, [.. invoke.GetParameters().Select(p => p.ParameterType)], modifiers: [modifier]);
         if (result != null || !matchGeneric) {
             return result;
         }
@@ -5987,9 +5982,9 @@ public static partial class TigerExtensions {
             var bucketsField = dictionaryType.GetField("_buckets", BindingFlags.Instance | BindingFlags.NonPublic)!;
             var comparerField = dictionaryType.GetField("_comparer", BindingFlags.Instance | BindingFlags.NonPublic)!;
             var objectGetHashCode = typeof(object).GetMethod(nameof(GetHashCode))!;
-            var iEqualityComparerGetHashCodeMethod = iEqualityComparerType.GetMethod(nameof(IEqualityComparer<TKey>.GetHashCode), [typeof(TKey)])!;
-            var iEqualityComparerEqualMethod = iEqualityComparerType.GetMethod(nameof(IEqualityComparer<TKey>.Equals), [typeof(TKey?), typeof(TKey?)])!;
-            var equalityComparerGetDefaultMethod = typeof(EqualityComparer<TKey>).GetProperty(nameof(EqualityComparer<TKey>.Default), BindingFlags.Static | BindingFlags.Public)!.GetGetMethod()!;
+            var iEqualityComparerGetHashCodeMethod = iEqualityComparerType.GetMethod(nameof(IEqualityComparer<>.GetHashCode), [typeof(TKey)])!;
+            var iEqualityComparerEqualMethod = iEqualityComparerType.GetMethod(nameof(IEqualityComparer<>.Equals), [typeof(TKey?), typeof(TKey?)])!;
+            var equalityComparerGetDefaultMethod = typeof(EqualityComparer<TKey>).GetProperty(nameof(EqualityComparer<>.Default), BindingFlags.Static | BindingFlags.Public)!.GetGetMethod()!;
             var getBucketMethod = dictionaryType.GetMethod("GetBucket", BindingFlags.Instance | BindingFlags.NonPublic)!;
             var entryHashCodeField = entryType.GetField("hashCode")!;
             var entryKeyField = entryType.GetField("key")!;
