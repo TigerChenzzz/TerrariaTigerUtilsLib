@@ -8,6 +8,7 @@
     <EnablePathGenerator>false</EnablePathGenerator>
     <EnableModBuilder>false</EnableModBuilder>
     <DebugMod>None</DebugMod>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants>
@@ -16,6 +17,7 @@
       XNA;
       ZLINQ;
     </DefineConstants>
+    <NoWarn>CS1591</NoWarn> <!-- 缺少 XML 注释 -->
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Solaestas.tModLoader.ModBuilder" Version="1.6.1" />
