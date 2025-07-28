@@ -25,4 +25,7 @@
   <ItemGroup>
     <None Remove="**/*.uid" />
   </ItemGroup>
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="if not exist &quot;$(ProjectDir)..\ForOne\Libs&quot; mkdir &quot;$(ProjectDir)..\ForOne\Libs&quot;&#xD;&#xA;xcopy &quot;$(TargetDir)$(TargetName).dll&quot; &quot;$(ProjectDir)..\ForOne\Libs&quot; /Y&#xD;&#xA;xcopy &quot;$(TargetDir)$(TargetName).pdb&quot; &quot;$(ProjectDir)..\ForOne\Libs&quot; /Y&#xD;&#xA;xcopy &quot;$(TargetDir)$(TargetName).xml&quot; &quot;$(ProjectDir)..\ForOne\Libs&quot; /Y" />
+  </Target>
 </Project>
