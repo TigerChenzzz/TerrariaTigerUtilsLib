@@ -5,6 +5,7 @@
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants>
@@ -12,6 +13,7 @@
       GODOT;
       ZLINQ;
     </DefineConstants>
+    <NoWarn>CS1591</NoWarn> <!-- 缺少 XML 注释 -->
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Godot.SourceGenerators" Version="4.5.0-dev.2" />
