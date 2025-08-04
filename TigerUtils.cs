@@ -474,6 +474,7 @@ public static partial class TigerUtils {
         /// <param name="max">最大值</param>
         /// <param name="μ">峰值</param>
         /// <param name="sharpness">尖锐度, 此值越大随机结果越集中, 为0时为平均分布</param>
+        /// <param name="rand"></param>
         /// <returns></returns>
         public static double RandomDistribution(double min, double max, double μ, double sharpness, Random? rand = null) {
             if (sharpness == 0) {
@@ -1376,14 +1377,9 @@ public static partial class TigerUtils {
     #region DoIfNot & GetIfNot
     /// <summary>
     /// 若<paramref name="condition"/>为假则调用<paramref name="action"/>.
-    /// 相当与DoIf(!<paramref name="condition"/>, <paramref name="action"/>)
+    /// 相当于DoIf(!<paramref name="condition"/>, <paramref name="action"/>)
     /// </summary>
     /// <returns>返回!<paramref name="condition"/></returns>
-    /// <summary>
-    /// 若<paramref name="condition"/>为真则调用<paramref name="action"/>, 否则调用<paramref name="altAction"/>.
-    /// <br/>若为表达式推荐使用<see cref="Do"/>配合三目运算符
-    /// </summary>
-    /// <returns>返回<paramref name="condition"/></returns>
     public static bool DoIfNot(bool condition, Action action) {
         if (!condition) {
             action.Invoke();
@@ -1570,7 +1566,7 @@ public static partial class TigerUtils {
     #region DoIfElse & GetIfElse
     /// <summary>
     /// 若<paramref name="condition"/>为真则调用<paramref name="action"/>, 否则调用<paramref name="altAction"/>.
-    /// <br/>若为表达式推荐使用<see cref="Do"/>配合三目运算符
+    /// <br/>若为表达式推荐使用<see cref="Do(Action)"/>配合三目运算符
     /// </summary>
     /// <returns>返回<paramref name="condition"/></returns>
     public static bool DoIfElse(bool condition, Action action, Action altAction) {
@@ -2063,6 +2059,7 @@ public static partial class TigerUtils {
     /// would still do action once and try break out when condition is null but action is not
     /// </summary>
     /// <param name="action">when get true, breaks out</param>
+    /// <param name="condition">the loop condition</param>
     public static bool DoWhileB(Func<bool> action, Func<bool> condition) {
         if (condition == null) {
             return action?.Invoke() == true;
@@ -2090,6 +2087,7 @@ public static partial class TigerUtils {
     /// <summary>
     /// returns true when break out, else returns false
     /// </summary>
+    /// <param name="condition">the loop condition</param>
     /// <param name="action">breaks out when get true</param>
     public static bool WhileDoB(Func<bool> condition, Func<bool> action) {
         while (condition()) {
@@ -2113,6 +2111,9 @@ public static partial class TigerUtils {
     /// <summary>
     /// returns true when break out, else returns false
     /// </summary>
+    /// <param name="init">the init statements</param>
+    /// <param name="condition">the loop condition</param>
+    /// <param name="iter">the iter statements</param>
     /// <param name="action">breaks out when get true</param>
     public static bool ForDoB(Action? init, Func<bool>? condition, Action? iter, Func<bool>? action) {
         init?.Invoke();
@@ -2136,6 +2137,7 @@ public static partial class TigerUtils {
     /// <summary>
     /// returns true when break out, else returns false
     /// </summary>
+    /// <param name="enumerable"></param>
     /// <param name="action">breaks out when get true</param>
     public static bool ForeachDoB<T>(IEnumerable<T> enumerable, Func<T, bool> action) {
         foreach (T t in enumerable) {
@@ -3840,6 +3842,9 @@ public static partial class TigerExtensions {
     /// <br/>在两边时会逐渐趋向两边的值, 但不会达到
     /// <br/>不需要注意<paramref name="left"/>和<paramref name="right"/>的大小关系
     /// </summary>
+    /// <param name="self"></param>
+    /// <param name="left"></param>
+    /// <param name="right"></param>
     /// <param name="width">
     /// 代表变化的缓度, 为1时当<paramref name="self"/>到达<paramref name="left"/>或<paramref name="right"/>时,
     /// 实际得到的值还差25%左右, 当此值越小, 相差的值越小
@@ -3858,6 +3863,9 @@ public static partial class TigerExtensions {
     /// <br/>在两边时会逐渐趋向两边的值, 但不会达到
     /// <br/>不需要注意<paramref name="left"/>和<paramref name="right"/>的大小关系
     /// </summary>
+    /// <param name="self"></param>
+    /// <param name="left"></param>
+    /// <param name="right"></param>
     /// <param name="width">
     /// 代表变化的缓度, 为1时当<paramref name="self"/>到达<paramref name="left"/>或<paramref name="right"/>时,
     /// 实际得到的值还差25%左右, 当此值越小, 相差的值越小
@@ -5762,7 +5770,7 @@ public static partial class TigerExtensions {
         list[index] = value;
     }
     #endregion
-    #region ToSpan
+    #region ToSpan / ToReadonlySpan
     public static Span<T> ToSpan<T>(this T[]? array) => array;
     public static Span<T> ToSpan<T>(this T[]? array, Range range) {
         if (array == null) {
@@ -5773,6 +5781,20 @@ public static partial class TigerExtensions {
     }
     public static Span<T> ToSpan<T>(this List<T>? list) => CollectionsMarshal.AsSpan(list);
     public static Span<T> ToSpan<T>(this List<T> list, Range range) {
+        var span = CollectionsMarshal.AsSpan(list);
+        return span[range.ToSafe(span.Length)];
+    }
+
+    public static ReadOnlySpan<T> ToReadOnlySpan<T>(this T[]? array) => array;
+    public static ReadOnlySpan<T> ToReadOnlySpan<T>(this T[]? array, Range range) {
+        if (array == null) {
+            return default;
+        }
+        var (offset, length) = range.GetOffsetAndLengthSafe(array.Length);
+        return new(array, offset, length);
+    }
+    public static ReadOnlySpan<T> ToReadOnlySpan<T>(this List<T>? list) => CollectionsMarshal.AsSpan(list);
+    public static ReadOnlySpan<T> ToReadOnlySpan<T>(this List<T> list, Range range) {
         var span = CollectionsMarshal.AsSpan(list);
         return span[range.ToSafe(span.Length)];
     }
