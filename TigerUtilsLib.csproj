@@ -1,4 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Import tModLoader mod properties -->
+  <Import Project="..\tModLoader.targets" />
+  
   <PropertyGroup>
     <AssemblyName>TigerUtilsLib</AssemblyName>
     <TargetFramework>net8.0</TargetFramework>
@@ -9,19 +12,27 @@
     <EnableModBuilder>false</EnableModBuilder>
     <DebugMod>None</DebugMod>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <BuildMod>false</BuildMod>
   </PropertyGroup>
   <PropertyGroup>
     <DefineConstants>
       $(DefineConstants);
       TERRARIA;
       XNA;
-      ZLINQ;
+      <!--ZLINQ;-->
     </DefineConstants>
     <NoWarn>CS1591</NoWarn> <!-- 缺少 XML 注释 -->
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Solaestas.tModLoader.ModBuilder" Version="1.6.1" />
+    <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.1">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <!--默认Publicizer-->
+    <Publicize Include="tModLoader;FNA" />
+  </ItemGroup>
+  <ItemGroup>
     <Publicize Include="ReLogic" />
-    <PackageReference Include="ZLinq" Version="1.4.9" />
+    <!--<PackageReference Include="ZLinq" Version="1.4.9" />-->
   </ItemGroup>
 </Project>
