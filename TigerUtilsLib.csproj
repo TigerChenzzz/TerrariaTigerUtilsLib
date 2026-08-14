@@ -4,7 +4,7 @@
   
   <PropertyGroup>
     <AssemblyName>TigerUtilsLib</AssemblyName>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>preview</LangVersion>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -21,7 +21,7 @@
       XNA;
       <!--ZLINQ;-->
     </DefineConstants>
-    <NoWarn>CS1591</NoWarn> <!-- 缺少 XML 注释 -->
+    <NoWarn>CS1591, CS1573</NoWarn> <!-- 缺少 XML 注释 -->
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BepInEx.AssemblyPublicizer.MSBuild" Version="0.4.1">

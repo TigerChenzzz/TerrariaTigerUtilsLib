@@ -134,9 +134,10 @@ public static partial class TigerUtils {
         }
     }
     /// <summary>
-    /// 在使用<see cref="Item.NewItem"/>后调用以同步
+    /// 在使用<see cref="Item.NewItem(IEntitySource, Vector2, Vector2, int, int, bool, int, bool)"/>后调用以同步
     /// </summary>
     /// <param name="itemWai"></param>
+    /// <param name="noGrabDelay"></param>
     public static void TrySyncItem(int itemWai, bool noGrabDelay = true) {
         if (Main.netMode == NetmodeID.MultiplayerClient) {
             NetMessage.SendData(MessageID.SyncItem, -1, -1, null, itemWai, noGrabDelay.ToInt());
@@ -620,154 +621,52 @@ public static partial class TigerUtils {
     #region ChatManager 优化
     public static partial class ChatManagerFix {
         #region 原版代码参照
-        public static Vector2 GetStringSize_Vanilla(DynamicSpriteFont font, TextSnippet[] snippets, Vector2 baseScale, float maxWidth = -1f) {
-            // Vector2 mousePosition = Main.MouseScreen; // vec
-            Vector2 position = Vector2.Zero; // vector
-            Vector2 result = Vector2.Zero;
-            float spaceWidth = font.MeasureString(" ").X; // x
-            float snippetScale; // num = 1f
-            float maxSnippetScale = 0f; // num2
+        /// <summary>
+        /// <see cref="ChatManager.LayoutSnippets(DynamicSpriteFont, IEnumerable{TextSnippet}, Vector2, float)"/>
+        /// </summary>
+        public static IEnumerable<PositionedSnippet> LayoutSnippets_Vanilla(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, Vector2 scale, float maxWidth = -1f) {
+            int line = 0;
+            Vector2 pos = Vector2.Zero;
+            float uniqueDrawScale = Math.Min(scale.X, scale.Y);
+            int i = 0;
             foreach (TextSnippet snippet in snippets) {
-                snippet.Update();
-                snippetScale = snippet.Scale;
-                if (snippet.UniqueDraw(justCheckingString: true, out Vector2 size, null, scale: baseScale.X * snippetScale)) {
-                    /*
-				    vector.X += size.X * baseScale.X * num;
-				    */
-                    position.X += size.X;
+                if (snippet.UniqueDraw(justCheckingSize: true, out var size2, null, default, default, uniqueDrawScale)) {
+                    if (maxWidth >= 0f && pos.X + size2.X > maxWidth) {
+                        pos.X = 0f;
+                        pos.Y += font.LineSpacing * scale.Y;
+                        line++;
+                    }
 
-                    result.X = Math.Max(result.X, position.X);
-                    result.Y = Math.Max(result.Y, position.Y + size.Y);
-                    continue;
+                    yield return new PositionedSnippet(snippet, i, line, pos, size2);
+                    pos.X += size2.X;
                 }
-
-                string[] lines = snippet.Text.Split('\n'); // array
-                                                           // string[] array2 = array;
-                for (int j = 0; j < lines.Length; j++) {
-                    string[] words = lines[j].Split(' '); // array3
-                    for (int k = 0; k < words.Length; k++) {
-                        if (k != 0)
-                            position.X += spaceWidth * baseScale.X * snippetScale;
-
-                        if (maxWidth > 0f) {
-                            float num3 = font.MeasureString(words[k]).X * baseScale.X * snippetScale;
-                            if (position.X + num3 > maxWidth) {
-                                position.X = 0;
-                                position.Y += font.LineSpacing * maxSnippetScale * baseScale.Y;
-                                result.Y = Math.Max(result.Y, position.Y);
-                                maxSnippetScale = 0f;
-                            }
+                else {
+                    string text = font.CreateWrappedText(snippet.Text, scale.X, maxWidth, pos.X, Language.ActiveCulture.CultureInfo);
+                    int num = 0;
+                    while (true) {
+                        int sep = text.IndexOf('\n', num);
+                        int num2 = ((sep < 0) ? text.Length : sep) - num;
+                        if (num2 > 0) {
+                            string text2 = text.Substring(num, num2);
+                            size2 = font.MeasureString(text2) * scale;
+                            yield return new PositionedSnippet(snippet.CopyMorph(text2), i, line, pos, size2);
+                            pos.X += size2.X;
                         }
 
-                        if (maxSnippetScale < snippetScale)
-                            maxSnippetScale = snippetScale;
-
-                        Vector2 vector2 = font.MeasureString(words[k]);
-                        // mousePosition.Between(position, position + vector2);
-                        position.X += vector2.X * baseScale.X * snippetScale;
-                        result.X = Math.Max(result.X, position.X);
-                        result.Y = Math.Max(result.Y, position.Y + vector2.Y);
-                    }
-
-                    // Fix spacing with \n and chat tags, #2981
-                    // Skips last line from counting, so "text\ntext", wouldn't be measured as "text\ntext\n"
-                    /*
-                    if (array.Length > 1) {
-                    */
-                    if (lines.Length > 1 && j < lines.Length - 1) {
-                        position.X = 0;
-                        position.Y += font.LineSpacing * maxSnippetScale * baseScale.Y;
-                        result.Y = Math.Max(result.Y, position.Y);
-                        maxSnippetScale = 0f;
-                    }
-                }
-            }
-
-            return result;
-        }
-        // [SuppressMessage("Performance", "SYSLIB1045:转换为“GeneratedRegexAttribute”。")]
-        public static Vector2 DrawColorCodedString_Vanilla(SpriteBatch spriteBatch, DynamicSpriteFont font, TextSnippet[] snippets, Vector2 position, Color baseColor, float rotation, Vector2 origin, Vector2 baseScale, out int hoveredSnippet, float maxWidth, bool ignoreColors = false) {
-            hoveredSnippet = -1; // num
-            Vector2 mousePosition = Main.MouseScreen; // vec
-            Vector2 positionNow = position; // vector
-            Vector2 result = positionNow;
-            float x = font.MeasureString(" ").X;
-            Color color = baseColor;
-            float snippetScale; // num2 = 1f
-            float maxSnippetScale = 0f; // num3
-            for (int i = 0; i < snippets.Length; i++) {
-                TextSnippet textSnippet = snippets[i];
-                textSnippet.Update();
-                if (!ignoreColors)
-                    color = textSnippet.GetVisibleColor();
-
-                snippetScale = textSnippet.Scale;
-
-                /*
-                if (textSnippet.UniqueDraw(justCheckingString: false, out var size, spriteBatch, vector, color, num2)) {
-                */
-                if (textSnippet.UniqueDraw(justCheckingString: false, out var size, spriteBatch, positionNow, color, baseScale.X * snippetScale)) {
-                    if (mousePosition.Between(positionNow, positionNow + size))
-                        hoveredSnippet = i;
-
-                    /*
-                    vector.X += size.X * baseScale.X * num2;
-                    */
-                    positionNow.X += size.X;
-
-                    result.X = Math.Max(result.X, positionNow.X);
-                    continue;
-                }
-
-                string[] lines = LineSplitRegex().Split(textSnippet.Text); // array
-                bool flag = true;
-                foreach (string text in lines) {
-                    string[] words = text.Split(' '); // array2
-                    if (text == "\n") {
-                        positionNow.Y += font.LineSpacing * maxSnippetScale * baseScale.Y;
-                        positionNow.X = position.X;
-                        result.Y = Math.Max(result.Y, positionNow.Y);
-                        maxSnippetScale = 0f;
-                        flag = false;
-                        continue;
-                    }
-
-                    for (int k = 0; k < words.Length; k++) {
-                        if (k != 0)
-                            positionNow.X += x * baseScale.X * snippetScale;
-
-                        if (maxWidth > 0f) {
-                            float num4 = font.MeasureString(words[k]).X * baseScale.X * snippetScale;
-                            if (positionNow.X - position.X + num4 > maxWidth) {
-                                positionNow.X = position.X;
-                                positionNow.Y += font.LineSpacing * maxSnippetScale * baseScale.Y;
-                                result.Y = Math.Max(result.Y, positionNow.Y);
-                                maxSnippetScale = 0f;
-                            }
+                        if (sep < 0) {
+                            break;
                         }
 
-                        if (maxSnippetScale < snippetScale)
-                            maxSnippetScale = snippetScale;
-
-                        spriteBatch.DrawString(font, words[k], positionNow, color, rotation, origin, baseScale * textSnippet.Scale * snippetScale, SpriteEffects.None, 0f);
-                        Vector2 vector2 = font.MeasureString(words[k]);
-                        if (mousePosition.Between(positionNow, positionNow + vector2))
-                            hoveredSnippet = i;
-
-                        positionNow.X += vector2.X * baseScale.X * snippetScale;
-                        result.X = Math.Max(result.X, positionNow.X);
+                        pos.X = 0f;
+                        pos.Y += font.LineSpacing * scale.Y;
+                        line++;
+                        num = sep + 1;
                     }
-
-                    if (lines.Length > 1 && flag) {
-                        positionNow.Y += font.LineSpacing * maxSnippetScale * baseScale.Y;
-                        positionNow.X = position.X;
-                        result.Y = Math.Max(result.Y, positionNow.Y);
-                        maxSnippetScale = 0f;
-                    }
-                    flag = true;
                 }
+
+                i++;
+                size2 = default;
             }
-            return result;
         }
         #endregion
 
@@ -785,7 +684,7 @@ public static partial class TigerUtils {
             for (int i = 0; i < snippets.Count; i++) {
                 TextSnippet snippet = snippets[i];
                 if (snippets[i].GetType() == typeof(TextSnippet)) {
-                    PlainTagHandler.PlainSnippet plainSnippet = new(snippet.Text, snippet.Color, snippet.Scale);
+                    PlainTagHandler.PlainSnippet plainSnippet = new(snippet.Text, snippet.Color);
                     snippets[i] = plainSnippet;
                 }
             }
@@ -825,15 +724,6 @@ public static partial class TigerUtils {
         }
         #endregion
         #region DrawString
-        /// <summary>
-        /// <br/>优化:
-        /// <br/>换成 IEnumerable &lt;TextSnippet>
-        /// <br/>根据 TextSnippet.UniqueDraw 返回的 Size 调整行高
-        /// <br/>处理换行方式修改
-        /// <br/><paramref name="maxWidth"/> 为 0 时也视为限宽
-        /// <br/><paramref name="baseScale"/> 变为 float
-        /// <br/>返回值现在是大小而不是右下角的位置
-        /// </summary>
         public static Vector2 DrawColorCodedString(SpriteBatch spriteBatch, DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, Vector2 position, Color baseColor, float rotation, Vector2 origin, float baseScale, out int hoveredSnippet, float maxWidth, bool ignoreColors,
             ref Vector2 positionNow, ref float maxLineHeightNow) {
             #region 局部变量初始化
@@ -917,7 +807,7 @@ public static partial class TigerUtils {
             out Vector2 textSize, ref Vector2 positionNow, ref float maxLineHeightNow) {
             if (maxWidth < 0) {
                 textSize = GetStringSize(font, snippets, baseScale);
-                return snippets.ToList();
+                return snippets is List<TextSnippet> listSnippets ? listSnippets : [.. snippets];
             }
             #region 局部变量初始化
             List<TextSnippet> wrapped = [];
@@ -1243,6 +1133,15 @@ public static partial class TigerUtils {
         #endregion
 
         #region 一切的根基 HandleSnippets
+        /// <summary>
+        /// <br/>优化:
+        /// <br/>换成 IEnumerable &lt;TextSnippet>
+        /// <br/>根据 TextSnippet.UniqueDraw 返回的 Size 调整行高
+        /// <br/>处理换行方式修改
+        /// <br/><paramref name="maxWidth"/> 为 0 时也视为限宽
+        /// <br/><paramref name="baseScale"/> 变为 float
+        /// <br/>返回值现在是大小而不是右下角的位置
+        /// </summary>
         private static void HandleSnippets(DynamicSpriteFont font, IEnumerable<TextSnippet> snippets, Vector2 position, float baseScale, float maxWidth,
             ref Vector2 positionNow, ref Vector2 result, ref float scale, ref float maxLineHeight, ref bool justNewLine, ref TextSnippet snippet, ref int i,
             Action<bool> NewLine, Action<string, Vector2> DrawString, Action<TextSnippet, Vector2> UniqueDraw, Action<TextSnippet> AfterUpdateSnippet, Action<TextSnippet> PostHandleNonUniqueSnippet, Action FinalProcess
@@ -1285,9 +1184,8 @@ public static partial class TigerUtils {
             foreach (var snip in snippets) {
                 snippet = snip;
                 i += 1;
-                snippet.Update();
                 AfterUpdateSnippet(snippet);
-                scaleInner = scale = snippet.Scale * baseScale;
+                scaleInner = scale = baseScale;
                 #region 处理有独特绘制的 Snippet (UniqueDraw)
                 if (snippet.UniqueDraw(true, out var size, null, scale: scale)) {
                     // 若超限, 则先换行
@@ -1433,6 +1331,7 @@ public static partial class TigerUtils {
     /// <summary>
     /// 若在主线程则直接执行, 否则安排到主线程执行
     /// </summary>
+    /// <param name="action"></param>
     /// <param name="wait">在非主线程时是否等待到任务完成时</param>
     public static void DoOnMainThread(Action action, bool wait = true) {
         if (ThreadCheck.IsMainThread) {
@@ -2214,7 +2113,7 @@ public static partial class TigerExtensions {
         if (condition) {
             TooltipLine line = new(ModInstance, name, text);
             if (overrideColor != null) {
-                line.OverrideColor = overrideColor;
+                line.Color = overrideColor.Value;
             }
             tooltips.Add(line);
             return true;
@@ -2225,7 +2124,7 @@ public static partial class TigerExtensions {
         if (condition) {
             TooltipLine line = new(ModInstance, nameDelegate?.Invoke(), textDelegate?.Invoke());
             if (overrideColor != null) {
-                line.OverrideColor = overrideColor;
+                line.Color = overrideColor.Value;
             }
             tooltips.Add(line);
             return true;
@@ -2236,7 +2135,7 @@ public static partial class TigerExtensions {
         if (condition) {
             TooltipLine line = new(ModInstance, name, textDelegate?.Invoke());
             if (overrideColor != null) {
-                line.OverrideColor = overrideColor;
+                line.Color = overrideColor.Value;
             }
             tooltips.Add(line);
             return true;
@@ -2249,7 +2148,7 @@ public static partial class TigerExtensions {
         if (condition) {
             TooltipLine line = new(ModInstance, name, text);
             if (overrideColor != null) {
-                line.OverrideColor = overrideColor;
+                line.Color = overrideColor.Value;
             }
             tooltips.Insert(index, line);
             return true;
@@ -2260,7 +2159,7 @@ public static partial class TigerExtensions {
         if (condition) {
             TooltipLine line = new(ModInstance, nameDelegate?.Invoke(), textDelegate?.Invoke());
             if (overrideColor != null) {
-                line.OverrideColor = overrideColor;
+                line.Color = overrideColor.Value;
             }
             tooltips.Insert(index, line);
             return true;
@@ -2271,7 +2170,7 @@ public static partial class TigerExtensions {
         if (condition) {
             TooltipLine line = new(ModInstance, name, textDelegate?.Invoke());
             if (overrideColor != null) {
-                line.OverrideColor = overrideColor;
+                line.Color = overrideColor.Value;
             }
             tooltips.Insert(index, line);
             return true;
@@ -2279,160 +2178,60 @@ public static partial class TigerExtensions {
         return false;
     }
     #endregion
+    /// <summary>
+    /// 摘自 <see cref="Main.MouseText_DrawItemTooltip"/>
+    /// </summary>
     public static List<TooltipLine> GetTooltips(this Item item) {
-        //摘自Main.MouseText_DrawItemTooltip
+        var diff = Main.instance._mouseTextCache.diff;
+        int yoyoLogo = -1;
+        int researchLine = -1;
+        var rare = item.rare;
+        if (item.expert) {
+            rare = -12;
+        }
+
+        float knockBack = item.knockBack;
         float num = 1f;
-        if (item.DamageType == DamageClass.Melee && Main.player[Main.myPlayer].kbGlove) {
+        if (item.melee && Main.LocalPlayer.kbGlove) {
             num += 1f;
         }
-        if (Main.player[Main.myPlayer].kbBuff) {
+
+        if (Main.LocalPlayer.kbBuff) {
             num += 0.5f;
         }
+
         if (num != 1f) {
             item.knockBack *= num;
         }
-        if (item.DamageType == DamageClass.Ranged && Main.player[Main.myPlayer].shroomiteStealth) {
-            item.knockBack *= 1f + (1f - Main.player[Main.myPlayer].stealth) * 0.5f;
-        }
-        int num2 = 30;
-        int oneDropLogo = -1;
-        int researchLine = -1;
-        float knockBack = item.knockBack;
-        int numTooltips = 1;
-        string[] texts = new string[num2];
-        bool[] modifier = new bool[num2];
-        bool[] badModifier = new bool[num2];
-        for (int m = 0; m < num2; m++) {
-            modifier[m] = false;
-            badModifier[m] = false;
-        }
-        string[] names = new string[num2];
-        Main.MouseText_DrawItemTooltip_GetLinesInfo(item, ref oneDropLogo, ref researchLine, knockBack, ref numTooltips, texts, modifier, badModifier, names, out int prefixlineIndex);
-        if (Main.npcShop > 0 && item.value >= 0 && (item.type < ItemID.CopperCoin || item.type > ItemID.PlatinumCoin)) {
-            Main.LocalPlayer.GetItemExpectedPrice(item, out long calcForSelling, out long calcForBuying);
-            long price = (item.isAShopItem || item.buyOnce) ? calcForBuying : calcForSelling;
-            if (item.shopSpecialCurrency != -1) {
-                names[numTooltips] = "SpecialPrice";
-                CustomCurrencyManager.GetPriceText(item.shopSpecialCurrency, texts, ref numTooltips, price);
-            }
-            else if (price > 0L) {
-                string text = "";
-                long platinum = 0L;
-                long gold = 0L;
-                long silver = 0L;
-                long copper = 0L;
-                price *= item.stack;
-                if (!item.buy) {
-                    price /= 5L;
-                    if (price < 1L) {
-                        price = 1L;
-                    }
-                    long singlePrice = price;
-                    price *= item.stack;
-                    int amount = Main.shopSellbackHelper.GetAmount(item);
-                    if (amount > 0) {
-                        price += (-singlePrice + calcForBuying) * Math.Min(amount, item.stack);
-                    }
-                }
-                if (price < 1L) {
-                    price = 1L;
-                }
-                if (price >= 1000000L) {
-                    platinum = price / 1000000L;
-                    price -= platinum * 1000000L;
-                }
-                if (price >= 10000L) {
-                    gold = price / 10000L;
-                    price -= gold * 10000L;
-                }
-                if (price >= 100L) {
-                    silver = price / 100L;
-                    price -= silver * 100L;
-                }
-                if (price >= 1L) {
-                    copper = price;
-                }
-                if (platinum > 0L) {
-                    text = string.Concat(
-                    [
-                    text,
-                        platinum.ToString(),
-                        " ",
-                        Lang.inter[15].Value,
-                        " "
-                    ]);
-                }
-                if (gold > 0L) {
-                    text = string.Concat(
-                    [
-                    text,
-                        gold.ToString(),
-                        " ",
-                        Lang.inter[16].Value,
-                        " "
-                    ]);
-                }
-                if (silver > 0L) {
-                    text = string.Concat(
-                    [
-                    text,
-                        silver.ToString(),
-                        " ",
-                        Lang.inter[17].Value,
-                        " "
-                    ]);
-                }
-                if (copper > 0L) {
-                    text = string.Concat(
-                    [
-                    text,
-                        copper.ToString(),
-                        " ",
-                        Lang.inter[18].Value,
-                        " "
-                    ]);
-                }
-                if (!item.buy) {
-                    texts[numTooltips] = Lang.tip[49].Value + " " + text;
-                }
-                else {
-                    texts[numTooltips] = Lang.tip[50].Value + " " + text;
-                }
-                names[numTooltips] = "Price";
-                numTooltips++;
-            }
-            else if (item.type != ItemID.DefenderMedal) {
-                texts[numTooltips] = Lang.tip[51].Value;
-                names[numTooltips] = "Price";
-                numTooltips++;
-            }
+
+        if (item.ranged && Main.LocalPlayer.shroomiteStealth) {
+            item.knockBack *= 1f + (1f - Main.LocalPlayer.stealth) * 0.5f;
         }
 
-        //摘自ItemLoader.ModifyTooltips
-        List<TooltipLine> tooltips = [];
-        for (int i = 0; i < numTooltips; i++) {
-            tooltips.Add(new TooltipLine(ModInstance, names[i], texts[i]) {
-                IsModifier = modifier[i],
-                IsModifierBad = badModifier[i]
-            });
+        int numLines = 1;
+        string[] array = Main._mouseTextTooltipLine_Text;
+        Color[] mouseTextTooltipLine_Color = Main._mouseTextTooltipLine_Color;
+        int valueOrDefault = (30 + item.ToolTip?.Lines).GetValueOrDefault();
+        if (array.Length < valueOrDefault) {
+            Array.Resize(ref array, valueOrDefault);
+            Array.Resize(ref mouseTextTooltipLine_Color, valueOrDefault);
         }
-        if (item.prefix >= PrefixID.Count && prefixlineIndex != -1) {
-            ModPrefix prefix = PrefixLoader.GetPrefix(item.prefix);
-            IEnumerable<TooltipLine>? tooltipLines = prefix?.GetTooltipLines(item);
-            if (tooltipLines != null) {
-                foreach (TooltipLine line in tooltipLines) {
-                    tooltips.Insert(prefixlineIndex, line);
-                    prefixlineIndex++;
-                }
-            }
+
+        _ = Main.mouseTextColor;
+        for (int i = 0; i < array.Length; i++) {
+            mouseTextTooltipLine_Color[i] = new Color(255, 255, 255);
         }
-        item.ModItem?.ModifyTooltips(tooltips);
-        if (!item.IsAir) {
-            foreach (GlobalItem globalItem in item.Globals) {
-                globalItem.ModifyTooltips(item, tooltips);
-            }
+
+        mouseTextTooltipLine_Color[0] = Main.MouseText_DrawItemTooltip_GetItemNameColor(rare, diff);
+        string[] array2 = new string[array.Length];
+        Main.MouseText_DrawItemTooltip_GetLinesInfo(item, ref yoyoLogo, ref researchLine, knockBack, ref numLines, array, mouseTextTooltipLine_Color, array2, out var prefixlineIndex);
+        Main.MouseText_DrawItemTooltip_AddShopLines(item, ref numLines, array, mouseTextTooltipLine_Color, array2);
+        if (NewCraftingUI.Visible) {
+            NewCraftingUI.AddTooltipLines(item, ref numLines, array, mouseTextTooltipLine_Color, array2);
         }
-        return tooltips;
+
+        List<TooltipLine> list = ItemLoader.ModifyTooltips(item, ref numLines, array2, ref array, ref mouseTextTooltipLine_Color, ref yoyoLogo, prefixlineIndex);
+        return list;
     }
     #endregion
     #region Player
