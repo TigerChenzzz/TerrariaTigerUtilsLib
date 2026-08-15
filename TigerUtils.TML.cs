@@ -97,7 +97,7 @@ public static partial class TigerUtils {
     /// </summary>
     public static Item LocalRealHeldItem {
         get {
-            if (Main.mouseItem.IsNotAirS()) {
+            if (Main.mouseItem.IsNotAirS) {
                 return Main.mouseItem;
             }
             return Main.LocalPlayer.HeldItem;
@@ -2257,15 +2257,25 @@ public static partial class TigerExtensions {
     /// </summary>
     public static bool TryGetGlobalItemSafe<T>(this Item item, T baseInstance, [NotNullWhen(true)] out T? result) where T : GlobalItem
         => TryGetGlobalSafe<GlobalItem, T>(item.type, item.EntityGlobals, baseInstance, out result);
-    public static bool IsNotAir(this Item item) => !item.IsAir;
-    /// <summary>
-    /// 在<paramref name="item"/>为空时也返回<see langword="true"/>
-    /// </summary>
-    public static bool IsAirS([NotNullWhen(false)] this Item? item) => item == null || item.IsAir;
-    /// <summary>
-    /// 在<paramref name="item"/>为空时返回<see langword="false"/>
-    /// </summary>
-    public static bool IsNotAirS([NotNullWhen(true)] this Item? item) => item != null && !item.IsAir;
+    
+    extension(Item item) {
+        public bool IsNotAir => !item.IsAir;
+    }
+    extension ([NotNullWhen(false)] Item? item) {
+        /// <summary>
+        /// 在<paramref name="item"/>为空时也返回<see langword="true"/>
+        /// </summary>
+        public bool IsAirS => item == null || item.IsAir;
+    }
+    extension ([NotNullWhen(true)] Item? item) {
+        /// <summary>
+        /// 在<paramref name="item"/>为空时返回<see langword="false"/>
+        /// </summary>
+        public bool IsNotAirS => item != null && !item.IsAir;
+    }
+    #region Source
+    public static IEntitySource GetSource_FromThis(this Item item, string? context = null) => new EntitySource_Parent(item, context);
+    #endregion
     #endregion
     #region NPC
     public static bool TryGetGlobalNPCSafe<T>(this NPC npc, [NotNullWhen(true)] out T? result) where T : GlobalNPC
