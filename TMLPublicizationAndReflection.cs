@@ -57,7 +57,7 @@ public static partial class TigerUtils {
                 return GetDetourList(asm).ilHooks;
             }
         }
-        public static class Player {
+        public static class Player_ {
             public static void ItemCheck_Shoot(TMLPlayer player, int whoAmI, TMLItem sItem, int weaponDamage) => player.ItemCheck_Shoot(whoAmI, sItem, weaponDamage);
         }
         public static class SpriteBatch {
@@ -120,11 +120,11 @@ public static partial class TigerUtils {
             // _invocationList ?
 
         }
-        public static class Item {
+        public static class Item_ {
             public static readonly Type Type = typeof(TMLItem);
             public static readonly MethodInfo Clone = Type.GetMethod(nameof(TMLItem.Clone), bfpi)!;
         }
-        public static class Main {
+        public static class Main_ {
             public static readonly Type Type = typeof(TMLMain);
             public static readonly FieldInfo MouseItem = Type.GetField(nameof(TMLMain.mouseItem), bfps)!;
         }
@@ -133,8 +133,8 @@ public static partial class TigerUtils {
             public static readonly PropertyInfo DeveloperMode = Type.GetProperty("DeveloperMode", bfps)!;
             public static readonly MethodInfo FindModSources = Type.GetMethod("FindModSources", bfns)!;
         }
-        public static class Player {
-            static Player() {
+        public static class Player_ {
+            static Player_() {
                 #region Fields
                 AllFields = [];
                 foreach (var field in Type.GetFields(bfall)) {
