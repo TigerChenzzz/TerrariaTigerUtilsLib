@@ -20,8 +20,8 @@ partial class TigerUtils {
         LerpType.Linear => FloatLerpModelByLinear.StaticNewLerpValue(val, clamped),
         LerpType.Quadratic => FloatLerpModelByQuadratic.StaticNewLerpValue(val, clamped, pars),
         LerpType.Cubic => FloatLerpModelByCubic.StaticNewLerpValue(val, clamped, pars),
-        LerpType.CubicByK => FloatLerpModelByCubic.StaticNewLerpValue(val, clamped, pars),
-        LerpType.Sin => FloatLerpModelByCubic.StaticNewLerpValue(val, clamped, pars),
+        LerpType.CubicByK => FloatLerpModelByCubicByK.StaticNewLerpValue(val, clamped, pars),
+        LerpType.Sin => FloatLerpModelBySin.StaticNewLerpValue(val, clamped, pars),
         LerpType.Stay => FloatLerpModelByStay.StaticNewLerpValue(val),
         _ => FloatLerpModelByLinear.StaticNewLerpValue(val, clamped),
     };

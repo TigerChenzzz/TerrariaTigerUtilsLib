@@ -16,9 +16,9 @@
     <NoWarn>CS1591</NoWarn> <!-- 缺少 XML 注释 -->
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Godot.SourceGenerators" Version="4.5.0-dev.2" />
-    <PackageReference Include="GodotSharp" Version="4.5.0-dev.2" />
-    <PackageReference Include="GodotSharpEditor" Version="4.5.0-dev.2" />
+    <PackageReference Include="Godot.SourceGenerators" Version="4.7.2" />
+    <PackageReference Include="GodotSharp" Version="4.7.2" />
+    <PackageReference Include="GodotSharpEditor" Version="4.7.2" />
     <PackageReference Include="MonoMod.RuntimeDetour" Version="25.2.3" />
     <PackageReference Include="ZLinq" Version="1.4.9" />
   </ItemGroup>
